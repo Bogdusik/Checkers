@@ -58,8 +58,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-2 sm:p-4 flex items-start justify-center py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-2 sm:p-4 flex flex-col">
       <div className="container mx-auto max-w-7xl w-full">
+        {/* Header - stays at top */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -82,8 +83,12 @@ export default function AdminPage() {
           </div>
           <p className="text-gray-400 text-sm sm:text-base ml-0 sm:ml-20">Управление игроками и статистикой</p>
         </motion.div>
+      </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-4 sm:mb-8">
+      {/* Main content - centered vertically */}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="container mx-auto max-w-7xl w-full">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-4 sm:mb-8">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -257,6 +262,7 @@ export default function AdminPage() {
             </table>
           </div>
         </motion.div>
+        </div>
       </div>
     </div>
   )
