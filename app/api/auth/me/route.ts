@@ -10,29 +10,41 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ user: null })
     }
 
-    // Update lastLoginAt to track online status
+    // Try to update lastLoginAt to track online status (non-blocking)
     // This helps determine if user is currently active
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() }
-    })
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() }
+      })
+    } catch (updateError) {
+      // If update fails, log but don't block the request
+      console.error('Failed to update lastLoginAt:', updateError)
+    }
 
-    // Fetch updated user with statistics
-    const updatedUser = await prisma.user.findUnique({
+    // Fetch user with statistics
+    const userWithStats = await prisma.user.findUnique({
       where: { id: user.id },
       include: {
         statistics: true
       }
     })
 
+    if (!userWithStats) {
+      return NextResponse.json(
+        { error: 'Пользователь не найден' },
+        { status: 404 }
+      )
+    }
+
     return NextResponse.json({
       user: {
-        id: updatedUser!.id,
-        email: updatedUser!.email,
-        username: updatedUser!.username,
-        isAdmin: updatedUser!.isAdmin,
-        lastLoginAt: updatedUser!.lastLoginAt,
-        statistics: updatedUser!.statistics
+        id: userWithStats.id,
+        email: userWithStats.email,
+        username: userWithStats.username,
+        isAdmin: userWithStats.isAdmin,
+        lastLoginAt: userWithStats.lastLoginAt,
+        statistics: userWithStats.statistics
       }
     })
   } catch (error) {
