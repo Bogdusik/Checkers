@@ -185,9 +185,9 @@ function GameContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-2 sm:p-4 flex items-start sm:items-center justify-center py-4 sm:py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-2 sm:p-4 flex flex-col">
       <div className="container mx-auto max-w-7xl w-full">
-        {/* Header */}
+        {/* Header - stays at top */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <Link
@@ -207,9 +207,12 @@ function GameContent() {
             <span className="hidden sm:inline">Выход</span>
           </button>
         </div>
+      </div>
 
-        {/* Main Game Layout */}
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* Main Game Layout - centered vertically */}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="container mx-auto max-w-7xl w-full">
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Column - Board */}
           <div className="lg:col-span-2 order-2 lg:order-1 flex items-center justify-center">
             {game.status === 'WAITING' && String(game.whitePlayerId) !== String(game.blackPlayerId) ? (
@@ -381,6 +384,7 @@ function GameContent() {
               </div>
             </motion.div>
           </div>
+        </div>
         </div>
       </div>
     </div>
