@@ -24,6 +24,33 @@ export default function Home() {
       .catch(() => {})
   }, [])
 
+  // Poll for accepted invites (when someone accepts your invite)
+  useEffect(() => {
+    if (!user) return
+
+    const checkAcceptedInvite = async () => {
+      try {
+        const res = await fetch('/api/game/invite/check', {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        })
+        const data = await res.json()
+        if (data.hasGame && data.gameId) {
+          // Navigate to the game
+          router.push(`/game?id=${data.gameId}`)
+        }
+      } catch (error) {
+        // Silently fail
+      }
+    }
+
+    // Check immediately and then every 2 seconds
+    checkAcceptedInvite()
+    const interval = setInterval(checkAcceptedInvite, 2000)
+
+    return () => clearInterval(interval)
+  }, [user, router])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="container mx-auto px-4 py-8 sm:py-12 lg:py-16">

@@ -56,7 +56,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ game })
   } catch (error) {
-    console.error('Error creating game:', error)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error creating game:', error)
+    }
     return NextResponse.json(
       { error: 'Ошибка создания игры' },
       { status: 500 }

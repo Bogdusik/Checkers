@@ -31,13 +31,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404 })
     }
 
-    // Check if there's already a pending invite
+    // Check if there's already a pending invite (in either direction)
     const existingInvite = await prisma.gameInvite.findFirst({
       where: {
         OR: [
           { fromUserId: user.id, toUserId, status: 'PENDING' },
           { fromUserId: toUserId, toUserId: user.id, status: 'PENDING' }
-        ]
+        ],
+        expiresAt: {
+          gt: new Date()
+        }
       }
     })
 
