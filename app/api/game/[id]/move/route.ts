@@ -103,7 +103,7 @@ export async function POST(
           status: gameStatus,
           winnerId,
           startedAt: game.startedAt || new Date(),
-          endedAt: gameStatus !== 'IN_PROGRESS' && gameStatus !== 'WAITING' ? new Date() : null,
+          endedAt: (gameStatus === 'WHITE_WON' || gameStatus === 'BLACK_WON' || gameStatus === 'DRAW') ? new Date() : null,
           moves: {
             create: {
               move: `${from}-${to}`,
