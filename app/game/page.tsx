@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import CheckersBoard from '@/components/CheckersBoard'
 import { LogOut, Users, Clock, Trophy, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
-export default function GamePage() {
+function GameContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const gameId = searchParams.get('id')
@@ -286,6 +286,22 @@ export default function GamePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function GamePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full"
+        />
+      </div>
+    }>
+      <GameContent />
+    </Suspense>
   )
 }
 
