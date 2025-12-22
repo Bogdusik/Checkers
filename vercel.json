@@ -1,10 +1,6 @@
 {
   "buildCommand": "prisma generate && prisma migrate deploy && next build",
   "framework": "nextjs",
-  "installCommand": "npm install",
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "JWT_SECRET": "@jwt_secret"
-  }
+  "installCommand": "npm install"
 }
 
