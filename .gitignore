@@ -38,4 +38,42 @@ next-env.d.ts
 # prisma
 /prisma/migrations
 
+# npm cache
 .npm-cache/
+npm-cache/
+.npm/
+
+# build artifacts
+dist/
+build/
+out/
+.next/
+.vercel/
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# temporary files
+*.tmp
+*.temp
+.cache/
