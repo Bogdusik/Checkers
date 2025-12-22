@@ -11,11 +11,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    // Update current user's lastLoginAt to show they're online
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() }
-    })
+    // Update current user's lastLoginAt to show they're online (non-blocking)
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() }
+      })
+    } catch (updateError) {
+      // If update fails, log but don't block the request
+      console.error('Failed to update lastLoginAt:', updateError)
+    }
 
     // Get all users except current user
     // Consider users online if they logged in within last 2 minutes (more accurate)
