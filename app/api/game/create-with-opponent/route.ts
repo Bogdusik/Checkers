@@ -23,10 +23,15 @@ export async function POST(request: NextRequest) {
     const isPlayingAgainstSelf = opponentId === null || opponentId === user.id
     const finalOpponentId = isPlayingAgainstSelf ? user.id : opponentId
 
+    // Randomly assign colors for fairness
+    const isUserWhite = Math.random() < 0.5
+    const whitePlayerId = isUserWhite ? user.id : finalOpponentId
+    const blackPlayerId = isUserWhite ? finalOpponentId : user.id
+
     const game = await prisma.game.create({
       data: {
-        whitePlayerId: user.id,
-        blackPlayerId: finalOpponentId,
+        whitePlayerId,
+        blackPlayerId,
         status: isPlayingAgainstSelf ? 'IN_PROGRESS' : 'IN_PROGRESS',
         startedAt: new Date(),
         fen: initialFen

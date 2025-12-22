@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { makeMove, gameToFen, fenToGame, getGameStatus, type CheckersGame } from '@/lib/checkers'
+import { makeMove, gameToFen, fenToGame, getGameStatus, type CheckersGame, type Square } from '@/lib/checkers'
 import { GameStatus } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
@@ -49,7 +49,7 @@ export async function POST(
     }
 
     // Check if user is part of this game
-    if (game.whitePlayerId !== user.id && game.blackPlayerId !== user.id) {
+    if (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id)) {
       return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
     }
 
@@ -62,14 +62,25 @@ export async function POST(
     const checkersGame = fenToGame(game.fen)
     
     // Check if playing against self
-    const isPlayingAgainstSelf = game.whitePlayerId === game.blackPlayerId && game.whitePlayerId === user.id
+    const isPlayingAgainstSelf = String(game.whitePlayerId) === String(game.blackPlayerId) && String(game.whitePlayerId) === String(user.id)
     
     // Check whose turn it is
     // If playing against self, allow moving any piece on current player's turn
     if (!isPlayingAgainstSelf) {
-      const playerColor = game.whitePlayerId === user.id ? 'white' : 'black'
+      const playerColor = String(game.whitePlayerId) === String(user.id) ? 'white' : 'black'
+      
       if (checkersGame.currentPlayer !== playerColor) {
-        return NextResponse.json({ error: 'Не ваш ход' }, { status: 400 })
+        return NextResponse.json({ 
+          error: `Не ваш ход. Сейчас ходят: ${checkersGame.currentPlayer === 'white' ? 'белые' : 'черные'}` 
+        }, { status: 400 })
+      }
+      
+      // Also verify that the piece being moved belongs to the player
+      const piece = checkersGame.board.get(from as Square)
+      if (!piece || piece.color !== playerColor) {
+        return NextResponse.json({ 
+          error: 'Вы можете ходить только своими шашками' 
+        }, { status: 400 })
       }
     }
     // If playing against self, allow moving any piece on current player's turn (no check needed)
@@ -127,7 +138,7 @@ export async function POST(
 
       // Update statistics if game ended
       if (gameStatus === 'WHITE_WON' || gameStatus === 'BLACK_WON' || gameStatus === 'DRAW') {
-        const isPlayingAgainstSelf = game.whitePlayerId === game.blackPlayerId
+        const isPlayingAgainstSelf = String(game.whitePlayerId) === String(game.blackPlayerId)
 
         if (isPlayingAgainstSelf) {
           // When playing against self, update stats only once
