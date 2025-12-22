@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { makeMove, gameToFen, fenToGame, getGameStatus, type CheckersGame } from '@/lib/checkers'
+import { GameStatus } from '@prisma/client'
 
 export async function POST(
   request: NextRequest,
@@ -72,8 +73,8 @@ export async function POST(
       const status = getGameStatus(result.newGame)
 
       // Determine game status
-      let gameStatus = game.status
-      let winnerId = null
+      let gameStatus: GameStatus = game.status
+      let winnerId: string | null = null
 
       if (status === 'white_won') {
         gameStatus = 'WHITE_WON'
