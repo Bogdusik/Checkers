@@ -139,41 +139,41 @@ function GameContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-2 sm:p-4">
       <div className="container mx-auto max-w-7xl">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <Link
               href="/"
-              className="flex items-center gap-2 px-4 py-2 glass-dark text-white rounded-lg hover:bg-opacity-50 transition-all"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 glass-dark text-white rounded-lg hover:bg-opacity-50 transition-all text-sm sm:text-base"
             >
-              <ArrowLeft className="w-5 h-5" />
-              Назад
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Назад</span>
             </Link>
-            <h1 className="text-3xl font-bold text-white">Игра в шашки</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Игра в шашки</h1>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 glass-dark text-white rounded-lg hover:bg-opacity-50 transition-all"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 glass-dark text-white rounded-lg hover:bg-opacity-50 transition-all text-sm sm:text-base"
           >
-            <LogOut className="w-5 h-5" />
-            Выход
+            <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">Выход</span>
           </button>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-2 order-2 lg:order-1">
             {game.status === 'WAITING' && game.whitePlayerId !== game.blackPlayerId ? (
-              <div className="glass-dark rounded-2xl p-12 text-center">
-                <h2 className="text-2xl font-bold text-white mb-4">Ожидание соперника</h2>
-                <p className="text-gray-300 mb-6">Игра начнется, когда присоединится второй игрок</p>
+              <div className="glass-dark rounded-2xl p-6 sm:p-12 text-center">
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Ожидание соперника</h2>
+                <p className="text-gray-300 mb-6 text-sm sm:text-base">Игра начнется, когда присоединится второй игрок</p>
                 <div className="flex items-center justify-center gap-2">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"
                   />
-                  <span className="text-gray-400">Поиск соперника...</span>
+                  <span className="text-gray-400 text-sm sm:text-base">Поиск соперника...</span>
                 </div>
               </div>
             ) : (
@@ -186,28 +186,28 @@ function GameContent() {
             )}
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="glass-dark rounded-2xl p-6"
+              className="glass-dark rounded-2xl p-4 sm:p-6"
             >
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <Users className="w-5 h-5" />
+              <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
                 Игроки
               </h2>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
-                  <span className="text-white">Белые</span>
-                  <span className="text-gray-300">
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-center justify-between p-2 sm:p-3 bg-black/20 rounded-lg">
+                  <span className="text-white text-sm sm:text-base">Белые</span>
+                  <span className="text-gray-300 text-xs sm:text-sm truncate ml-2">
                     {game.whitePlayerId === game.blackPlayerId 
                       ? (game.whitePlayer?.username || user?.username || 'Вы')
                       : game.whitePlayer?.username || 'Ожидание...'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
-                  <span className="text-white">Черные</span>
-                  <span className="text-gray-300">
+                <div className="flex items-center justify-between p-2 sm:p-3 bg-black/20 rounded-lg">
+                  <span className="text-white text-sm sm:text-base">Черные</span>
+                  <span className="text-gray-300 text-xs sm:text-sm truncate ml-2">
                     {game.whitePlayerId === game.blackPlayerId 
                       ? (game.blackPlayer?.username || user?.username || 'Вы')
                       : game.blackPlayer?.username || 'Ожидание...'}
@@ -220,13 +220,13 @@ function GameContent() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              className="glass-dark rounded-2xl p-6"
+              className="glass-dark rounded-2xl p-4 sm:p-6"
             >
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5" />
+              <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
                 Статус игры
               </h2>
-              <div className="space-y-2">
+              <div className="space-y-2 text-sm sm:text-base">
                 <div className="text-gray-300">
                   Статус: <span className="text-white font-semibold">
                     {game.status === 'WAITING' ? 'Ожидание соперника' : 
@@ -244,7 +244,7 @@ function GameContent() {
                   </div>
                 )}
                 {game.status === 'WAITING' && (
-                  <div className="text-blue-400 text-sm mt-2">
+                  <div className="text-blue-400 text-xs sm:text-sm mt-2">
                     Ожидание второго игрока...
                   </div>
                 )}
@@ -256,13 +256,13 @@ function GameContent() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
-                className="glass-dark rounded-2xl p-6"
+                className="glass-dark rounded-2xl p-4 sm:p-6"
               >
-                <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                  <Trophy className="w-5 h-5" />
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                  <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
                   Ваша статистика
                 </h2>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2 text-xs sm:text-sm">
                   <div className="flex justify-between text-gray-300">
                     <span>Игр:</span>
                     <span className="text-white font-semibold">{user.statistics.totalGames}</span>

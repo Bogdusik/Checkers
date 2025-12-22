@@ -60,44 +60,44 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
-          className="glass-dark rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
+          className="glass-dark rounded-2xl p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col"
         >
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <Users className="w-6 h-6 text-blue-400" />
-              <h2 className="text-2xl font-bold text-white">Выберите соперника</h2>
+          <div className="flex justify-between items-center mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">Выберите соперника</h2>
             </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-black/20 rounded-lg transition-colors"
             >
-              <X className="w-6 h-6 text-gray-400" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-3">
+          <div className="flex-1 overflow-y-auto space-y-2 sm:space-y-3">
             {/* Play against self option */}
             <motion.div
               whileHover={{ scale: 1.02 }}
               onClick={() => handleSelect(null)}
-              className="p-4 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border-2 border-purple-500/50 rounded-xl cursor-pointer hover:border-purple-400 transition-all"
+              className="p-3 sm:p-4 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border-2 border-purple-500/50 rounded-xl cursor-pointer hover:border-purple-400 transition-all"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
-                    <User className="w-6 h-6 text-white" />
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 flex items-center justify-center">
+                    <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold">Играть против себя</h3>
-                    <p className="text-gray-400 text-sm">Для тренировки и тестирования</p>
+                    <h3 className="text-white font-semibold text-sm sm:text-base">Играть против себя</h3>
+                    <p className="text-gray-400 text-xs sm:text-sm">Для тренировки и тестирования</p>
                   </div>
                 </div>
-                <div className="text-green-400 font-semibold">✓</div>
+                <div className="text-green-400 font-semibold text-lg sm:text-xl">✓</div>
               </div>
             </motion.div>
 
@@ -119,31 +119,31 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
                   key={player.id}
                   whileHover={{ scale: 1.02 }}
                   onClick={() => handleSelect(player.id)}
-                  className={`p-4 rounded-xl cursor-pointer transition-all ${
+                  className={`p-3 sm:p-4 rounded-xl cursor-pointer transition-all ${
                     player.isOnline
                       ? 'bg-blue-500/10 border-2 border-blue-500/30 hover:border-blue-400'
                       : 'bg-gray-500/10 border-2 border-gray-500/30 opacity-60'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                         player.isOnline ? 'bg-blue-500' : 'bg-gray-600'
                       }`}>
-                        <span className="text-white font-bold text-lg">
+                        <span className="text-white font-bold text-base sm:text-lg">
                           {player.username[0].toUpperCase()}
                         </span>
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-white font-semibold">{player.username}</h3>
+                          <h3 className="text-white font-semibold text-sm sm:text-base truncate">{player.username}</h3>
                           {player.isOnline ? (
-                            <Wifi className="w-4 h-4 text-green-400" />
+                            <Wifi className="w-3 h-3 sm:w-4 sm:h-4 text-green-400 flex-shrink-0" />
                           ) : (
-                            <WifiOff className="w-4 h-4 text-gray-500" />
+                            <WifiOff className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 flex-shrink-0" />
                           )}
                         </div>
-                        <p className="text-gray-400 text-sm">
+                        <p className="text-gray-400 text-xs sm:text-sm truncate">
                           Игр: {player.statistics?.totalGames || 0} | 
                           Побед: {player.statistics?.wins || 0} | 
                           Поражений: {player.statistics?.losses || 0}
@@ -151,7 +151,7 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
                       </div>
                     </div>
                     {player.isOnline && (
-                      <div className="text-green-400 font-semibold">Онлайн</div>
+                      <div className="text-green-400 font-semibold text-xs sm:text-sm flex-shrink-0 ml-2">Онлайн</div>
                     )}
                   </div>
                 </motion.div>
