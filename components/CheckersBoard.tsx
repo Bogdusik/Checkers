@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { createNewGame, gameToFen, fenToGame, makeMove, getValidMoves, type CheckersGame, type Square } from '@/lib/checkers'
 
@@ -46,10 +46,16 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
   const [validMoves, setValidMoves] = useState<Square[]>([])
   const [isPlayingAgainstSelf, setIsPlayingAgainstSelf] = useState(false)
   const [squareSize, setSquareSize] = useState(70)
+  const lastFenRef = useRef<string>(initialFen || '')
 
   useEffect(() => {
-    if (initialFen) {
-      setGame(fenToGame(initialFen))
+    if (initialFen && initialFen !== lastFenRef.current) {
+      const updatedGame = fenToGame(initialFen)
+      setGame(updatedGame)
+      lastFenRef.current = initialFen
+      // Clear selection when game state changes from parent
+      setSelectedSquare(null)
+      setValidMoves([])
     }
   }, [initialFen])
 
@@ -67,8 +73,6 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
   useEffect(() => {
     if (!gameId) return
 
-    let lastFen = initialFen || ''
-
     const pollGame = async () => {
       try {
         const res = await fetch(`/api/game/${gameId}`, {
@@ -81,15 +85,21 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
         if (data.game && data.game.fen) {
           const currentFen = data.game.fen
           
-          // Always update if FEN changed (opponent made a move)
-          if (currentFen !== lastFen) {
+          // Always update if FEN changed (opponent made a move or server state updated)
+          if (currentFen !== lastFenRef.current) {
             const updatedGame = fenToGame(currentFen)
             setGame(updatedGame)
-            lastFen = currentFen
+            lastFenRef.current = currentFen
             
-            // Clear selection when opponent moves
+            // Clear selection when game state changes (opponent moved or server updated)
             setSelectedSquare(null)
             setValidMoves([])
+            
+            console.log('Game state updated from server:', {
+              currentFen,
+              currentPlayer: updatedGame.currentPlayer,
+              playerColor
+            })
           }
           
           // Check if playing against self
@@ -107,7 +117,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
     pollGame() // Initial fetch
 
     return () => clearInterval(interval)
-  }, [gameId, initialFen])
+  }, [gameId])
 
   const isDarkSquare = (row: number, col: number) => {
     return (row + col) % 2 === 1
@@ -122,22 +132,27 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
       return
     }
 
-    const piece = game.board.get(square)
-    
-    // When playing against self, allow moving any piece on current player's turn
-    const canMoveThisColor = isPlayingAgainstSelf 
-      ? piece?.color === game.currentPlayer
-      : piece?.color === playerColor && game.currentPlayer === playerColor
-    
-    // Check if it's player's turn
+    // Check if it's player's turn first
     if (!isPlayingAgainstSelf && game.currentPlayer !== playerColor) {
-      // If clicking on a piece that's not current player's, deselect
+      // Not player's turn - clear selection if any
+      console.log('Not player turn:', {
+        currentPlayer: game.currentPlayer,
+        playerColor,
+        isPlayingAgainstSelf
+      })
       if (selectedSquare) {
         setSelectedSquare(null)
         setValidMoves([])
       }
       return
     }
+
+    const piece = game.board.get(square)
+    
+    // When playing against self, allow moving any piece on current player's turn
+    const canMoveThisColor = isPlayingAgainstSelf 
+      ? piece?.color === game.currentPlayer
+      : piece?.color === playerColor && game.currentPlayer === playerColor
 
     // If clicking on own piece (or current player's piece when playing against self), select it
     if (piece && canMoveThisColor) {
@@ -153,7 +168,9 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
         const result = makeMove(game, selectedSquare, square)
         if (result.success) {
           // Optimistically update local state
+          const newFen = gameToFen(result.newGame)
           setGame(result.newGame)
+          lastFenRef.current = newFen // Update ref immediately
           setSelectedSquare(null)
           setValidMoves([])
           
@@ -164,12 +181,16 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
           
           // Force a refresh after a short delay to get server state
           setTimeout(() => {
-            fetch(`/api/game/${gameId}`)
+            fetch(`/api/game/${gameId}`, {
+              cache: 'no-store',
+              headers: { 'Cache-Control': 'no-cache' }
+            })
               .then(res => res.json())
               .then(data => {
                 if (data.game && data.game.fen) {
                   const serverGame = fenToGame(data.game.fen)
                   setGame(serverGame)
+                  lastFenRef.current = data.game.fen
                 }
               })
               .catch(err => console.error('Error refreshing after move:', err))
