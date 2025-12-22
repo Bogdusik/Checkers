@@ -54,9 +54,10 @@ export async function GET(
     }
 
     // Check if user is part of this game
-    if (game.whitePlayerId !== user.id && game.blackPlayerId !== user.id && !user.isAdmin) {
+    if (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id) && !user.isAdmin) {
       return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
     }
+
 
     return NextResponse.json({ game })
   } catch (error) {

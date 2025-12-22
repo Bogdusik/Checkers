@@ -73,7 +73,11 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
   useEffect(() => {
     if (!gameId) return
 
+    let isMounted = true
+
     const pollGame = async () => {
+      if (!isMounted) return
+      
       try {
         const res = await fetch(`/api/game/${gameId}`, {
           cache: 'no-store',
@@ -81,43 +85,47 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
             'Cache-Control': 'no-cache'
           }
         })
+        
+        if (!isMounted) return
+        
         const data = await res.json()
         if (data.game && data.game.fen) {
           const currentFen = data.game.fen
           
-          // Always update if FEN changed (opponent made a move or server state updated)
+          // Only update if FEN changed (opponent made a move or server state updated)
           if (currentFen !== lastFenRef.current) {
             const updatedGame = fenToGame(currentFen)
-            setGame(updatedGame)
-            lastFenRef.current = currentFen
-            
-            // Clear selection when game state changes (opponent moved or server updated)
-            setSelectedSquare(null)
-            setValidMoves([])
-            
-            console.log('Game state updated from server:', {
-              currentFen,
-              currentPlayer: updatedGame.currentPlayer,
-              playerColor
-            })
+            if (isMounted) {
+              setGame(updatedGame)
+              lastFenRef.current = currentFen
+              
+              // Clear selection when game state changes (opponent moved or server updated)
+              setSelectedSquare(null)
+              setValidMoves([])
+            }
           }
           
-          // Check if playing against self
-          if (data.game.whitePlayerId === data.game.blackPlayerId) {
+          // Check if playing against self (only once)
+          if (isMounted && String(data.game.whitePlayerId) === String(data.game.blackPlayerId)) {
             setIsPlayingAgainstSelf(true)
           }
         }
       } catch (error) {
-        console.error('Error polling game:', error)
+        if (process.env.NODE_ENV === 'development' && isMounted) {
+          console.error('Error polling game:', error)
+        }
       }
     }
 
-    // Poll every 1 second for faster updates
-    const interval = setInterval(pollGame, 1000)
+    // Poll every 1.5 seconds (optimized for performance)
+    const interval = setInterval(pollGame, 1500)
     pollGame() // Initial fetch
 
-    return () => clearInterval(interval)
-  }, [gameId])
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [gameId, playerColor])
 
   const isDarkSquare = (row: number, col: number) => {
     return (row + col) % 2 === 1
@@ -135,11 +143,13 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
     // Check if it's player's turn first
     if (!isPlayingAgainstSelf && game.currentPlayer !== playerColor) {
       // Not player's turn - clear selection if any
-      console.log('Not player turn:', {
-        currentPlayer: game.currentPlayer,
-        playerColor,
-        isPlayingAgainstSelf
-      })
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Not player turn:', {
+          currentPlayer: game.currentPlayer,
+          playerColor,
+          isPlayingAgainstSelf
+        })
+      }
       if (selectedSquare) {
         setSelectedSquare(null)
         setValidMoves([])
@@ -179,22 +189,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
             onMove(selectedSquare, square)
           }
           
-          // Force a refresh after a short delay to get server state
-          setTimeout(() => {
-            fetch(`/api/game/${gameId}`, {
-              cache: 'no-store',
-              headers: { 'Cache-Control': 'no-cache' }
-            })
-              .then(res => res.json())
-              .then(data => {
-                if (data.game && data.game.fen) {
-                  const serverGame = fenToGame(data.game.fen)
-                  setGame(serverGame)
-                  lastFenRef.current = data.game.fen
-                }
-              })
-              .catch(err => console.error('Error refreshing after move:', err))
-          }, 500)
+          // Polling will update game state automatically, no need for manual refresh
         } else {
           // Move failed, deselect
           setSelectedSquare(null)
