@@ -133,6 +133,22 @@ export async function POST(
               moveNumber
             }
           }
+        },
+        include: {
+          whitePlayer: {
+            select: {
+              id: true,
+              username: true,
+              email: true
+            }
+          },
+          blackPlayer: {
+            select: {
+              id: true,
+              username: true,
+              email: true
+            }
+          }
         }
       })
 
@@ -206,13 +222,18 @@ export async function POST(
         status: gameStatus
       })
     } catch (error: any) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Move validation error:', error)
+      }
       return NextResponse.json(
-        { error: 'Неверный ход: ' + error.message },
+        { error: 'Неверный ход: ' + (error.message || 'Неизвестная ошибка') },
         { status: 400 }
       )
     }
   } catch (error) {
-    console.error('Error making move:', error)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error making move:', error)
+    }
     return NextResponse.json(
       { error: 'Ошибка выполнения хода' },
       { status: 500 }
