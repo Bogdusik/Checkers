@@ -67,22 +67,31 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
   useEffect(() => {
     if (!gameId) return
 
+    let lastFen = initialFen || ''
+
     const pollGame = async () => {
       try {
-        const res = await fetch(`/api/game/${gameId}`)
+        const res = await fetch(`/api/game/${gameId}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        })
         const data = await res.json()
         if (data.game && data.game.fen) {
-          const updatedGame = fenToGame(data.game.fen)
-          // Only update game state if it's different (to preserve selection)
-          setGame(prevGame => {
-            // If FEN is the same, don't update to preserve selection
-            const newFen = gameToFen(updatedGame)
-            const prevFen = gameToFen(prevGame)
-            if (newFen === prevFen) {
-              return prevGame
-            }
-            return updatedGame
-          })
+          const currentFen = data.game.fen
+          
+          // Always update if FEN changed (opponent made a move)
+          if (currentFen !== lastFen) {
+            const updatedGame = fenToGame(currentFen)
+            setGame(updatedGame)
+            lastFen = currentFen
+            
+            // Clear selection when opponent moves
+            setSelectedSquare(null)
+            setValidMoves([])
+          }
+          
           // Check if playing against self
           if (data.game.whitePlayerId === data.game.blackPlayerId) {
             setIsPlayingAgainstSelf(true)
@@ -93,12 +102,12 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
       }
     }
 
-    // Poll every 2 seconds
-    const interval = setInterval(pollGame, 2000)
+    // Poll every 1 second for faster updates
+    const interval = setInterval(pollGame, 1000)
     pollGame() // Initial fetch
 
     return () => clearInterval(interval)
-  }, [gameId])
+  }, [gameId, initialFen])
 
   const isDarkSquare = (row: number, col: number) => {
     return (row + col) % 2 === 1
@@ -143,13 +152,28 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
       if (validMoves.includes(square)) {
         const result = makeMove(game, selectedSquare, square)
         if (result.success) {
+          // Optimistically update local state
           setGame(result.newGame)
           setSelectedSquare(null)
           setValidMoves([])
           
+          // Send move to server
           if (onMove) {
             onMove(selectedSquare, square)
           }
+          
+          // Force a refresh after a short delay to get server state
+          setTimeout(() => {
+            fetch(`/api/game/${gameId}`)
+              .then(res => res.json())
+              .then(data => {
+                if (data.game && data.game.fen) {
+                  const serverGame = fenToGame(data.game.fen)
+                  setGame(serverGame)
+                }
+              })
+              .catch(err => console.error('Error refreshing after move:', err))
+          }, 500)
         } else {
           // Move failed, deselect
           setSelectedSquare(null)

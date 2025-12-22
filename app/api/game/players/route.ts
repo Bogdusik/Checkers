@@ -11,9 +11,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
+    // Update current user's lastLoginAt to show they're online
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() }
+    })
+
     // Get all users except current user
-    // Consider users online if they logged in within last 5 minutes
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+    // Consider users online if they logged in within last 2 minutes (more accurate)
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000)
     
     const players = await prisma.user.findMany({
       where: {
@@ -40,7 +46,7 @@ export async function GET(request: NextRequest) {
     // Mark players as online/offline
     const playersWithStatus = players.map(player => ({
       ...player,
-      isOnline: player.lastLoginAt && new Date(player.lastLoginAt) > fiveMinutesAgo
+      isOnline: player.lastLoginAt && new Date(player.lastLoginAt) > twoMinutesAgo
     }))
 
     return NextResponse.json({ players: playersWithStatus })

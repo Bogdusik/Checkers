@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -11,6 +13,12 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
+
+    // Update user's lastLoginAt to track online status
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() }
+    })
 
     const game = await prisma.game.findUnique({
       where: { id: params.id },
