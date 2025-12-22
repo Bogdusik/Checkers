@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Gamepad2, Trophy, TrendingUp } from 'lucide-react'
 import PlayerSelector from '@/components/PlayerSelector'
+import GameInviteNotification from '@/components/GameInviteNotification'
 
 export default function Home() {
   const router = useRouter()
@@ -152,6 +153,8 @@ export default function Home() {
           }}
           currentUserId={user?.id || ''}
         />
+        
+        {user && <GameInviteNotification userId={user.id} />}
       </div>
     </div>
   )

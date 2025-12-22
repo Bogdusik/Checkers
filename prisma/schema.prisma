@@ -24,6 +24,8 @@ model User {
   blackGames    Game[]  @relation("BlackGames")
   wonGames      Game[]  @relation("WonGames")
   statistics    UserStatistics?
+  sentInvites   GameInvite[] @relation("SentInvites")
+  receivedInvites GameInvite[] @relation("ReceivedInvites")
 }
 
 model UserStatistics {
@@ -56,6 +58,7 @@ model Game {
   
   moves         GameMove[]
   fen           String   @default("")
+  invites       GameInvite[]
   
   startedAt     DateTime?
   endedAt       DateTime?
@@ -82,5 +85,31 @@ enum GameStatus {
   BLACK_WON
   DRAW
   ABANDONED
+}
+
+model GameInvite {
+  id            String   @id @default(cuid())
+  fromUserId    String
+  toUserId      String
+  fromUser      User     @relation("SentInvites", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser        User     @relation("ReceivedInvites", fields: [toUserId], references: [id], onDelete: Cascade)
+  
+  status        InviteStatus @default(PENDING)
+  gameId        String?
+  game          Game?    @relation(fields: [gameId], references: [id], onDelete: SetNull)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  expiresAt     DateTime
+  
+  @@unique([fromUserId, toUserId, status])
+  @@index([toUserId, status])
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
 }
 
