@@ -115,7 +115,7 @@ export async function POST(
       })
 
       // Update statistics if game ended
-      if (gameStatus !== 'IN_PROGRESS' && gameStatus !== 'WAITING') {
+      if (gameStatus === 'WHITE_WON' || gameStatus === 'BLACK_WON' || gameStatus === 'DRAW') {
         const isPlayingAgainstSelf = game.whitePlayerId === game.blackPlayerId
 
         if (isPlayingAgainstSelf) {
