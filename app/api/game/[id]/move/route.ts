@@ -73,7 +73,7 @@ export async function POST(
       const status = getGameStatus(result.newGame)
 
       // Determine game status
-      let gameStatus: GameStatus = game.status
+      let gameStatus: GameStatus
       let winnerId: string | null = null
 
       if (status === 'white_won') {
@@ -85,10 +85,8 @@ export async function POST(
       } else if (status === 'draw') {
         gameStatus = 'DRAW'
       } else {
+        // Game is still in progress
         gameStatus = 'IN_PROGRESS'
-        if (game.status === 'WAITING') {
-          // Start game on first move
-        }
       }
 
       // Get move number
