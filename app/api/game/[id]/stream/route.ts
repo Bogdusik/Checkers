@@ -58,7 +58,9 @@ export async function GET(
             })
           }
         } catch (error) {
-          console.error('Error polling game:', error)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error polling game:', error)
+          }
         }
       }, 1000) // Poll every second
 
