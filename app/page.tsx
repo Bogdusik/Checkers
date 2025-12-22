@@ -1,0 +1,159 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
+import { Gamepad2, Trophy, TrendingUp } from 'lucide-react'
+import PlayerSelector from '@/components/PlayerSelector'
+
+export default function Home() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [showPlayerSelector, setShowPlayerSelector] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setUser(data.user)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="container mx-auto px-4 py-16">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <motion.div
+            animate={{ rotate: [0, 10, -10, 0] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+            className="inline-block mb-6"
+          >
+            <Gamepad2 className="w-20 h-20 text-white" />
+          </motion.div>
+          <h1 className="text-6xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+            Online Checkers
+          </h1>
+          <p className="text-xl text-gray-300">
+            Играйте в шашки онлайн с друзьями
+          </p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-3 gap-8 mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="glass-dark rounded-2xl p-6 hover:glow-hover transition-all"
+          >
+            <Gamepad2 className="w-12 h-12 text-blue-400 mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">Онлайн игра</h3>
+            <p className="text-gray-400">Играйте в шашки в реальном времени с друзьями</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="glass-dark rounded-2xl p-6 hover:glow-hover transition-all"
+          >
+            <Trophy className="w-12 h-12 text-yellow-400 mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">Статистика</h3>
+            <p className="text-gray-400">Отслеживайте свой прогресс и рейтинг</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="glass-dark rounded-2xl p-6 hover:glow-hover transition-all"
+          >
+            <TrendingUp className="w-12 h-12 text-green-400 mb-4" />
+            <h3 className="text-xl font-semibold text-white mb-2">Развитие</h3>
+            <p className="text-gray-400">Улучшайте свои навыки с каждой игрой</p>
+          </motion.div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+        >
+          {user ? (
+            <>
+              <button
+                onClick={() => setShowPlayerSelector(true)}
+                className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg glow"
+              >
+                Найти игру
+              </button>
+              <Link
+                href="/profile"
+                className="px-8 py-4 glass-dark text-white font-semibold rounded-xl hover:bg-opacity-50 transition-all transform hover:scale-105"
+              >
+                Мой профиль
+              </Link>
+              {user.isAdmin && (
+                <Link
+                  href="/admin"
+                  className="px-8 py-4 bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold rounded-xl hover:from-red-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg"
+                >
+                  Админ панель
+                </Link>
+              )}
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg glow"
+              >
+                Войти
+              </Link>
+              <Link
+                href="/register"
+                className="px-8 py-4 glass-dark text-white font-semibold rounded-xl hover:bg-opacity-50 transition-all transform hover:scale-105"
+              >
+                Регистрация
+              </Link>
+            </>
+          )}
+        </motion.div>
+
+        <PlayerSelector
+          isOpen={showPlayerSelector}
+          onClose={() => setShowPlayerSelector(false)}
+          onSelectPlayer={async (opponentId) => {
+            try {
+              const res = await fetch('/api/game/create-with-opponent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ opponentId })
+              })
+              const data = await res.json()
+              if (data.game) {
+                router.push(`/game?id=${data.game.id}`)
+              } else {
+                alert('Ошибка создания игры')
+              }
+            } catch (error) {
+              console.error('Error creating game:', error)
+              alert('Ошибка создания игры')
+            }
+          }}
+          currentUserId={user?.id || ''}
+        />
+      </div>
+    </div>
+  )
+}
+

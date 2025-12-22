@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  password      String
+  isAdmin       Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLoginAt   DateTime?
+  
+  whiteGames    Game[]  @relation("WhiteGames")
+  blackGames    Game[]  @relation("BlackGames")
+  wonGames      Game[]  @relation("WonGames")
+  statistics    UserStatistics?
+}
+
+model UserStatistics {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  totalGames    Int      @default(0)
+  wins          Int      @default(0)
+  losses        Int      @default(0)
+  draws         Int      @default(0)
+  
+  totalMoves    Int      @default(0)
+  averageGameTime Int     @default(0) // in seconds
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Game {
+  id            String   @id @default(cuid())
+  whitePlayerId String
+  blackPlayerId String
+  whitePlayer   User     @relation("WhiteGames", fields: [whitePlayerId], references: [id])
+  blackPlayer   User     @relation("BlackGames", fields: [blackPlayerId], references: [id])
+  
+  status        GameStatus @default(WAITING)
+  winnerId      String?
+  winner        User?      @relation("WonGames", fields: [winnerId], references: [id])
+  
+  moves         GameMove[]
+  fen           String   @default("")
+  
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model GameMove {
+  id            String   @id @default(cuid())
+  gameId        String
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  
+  move          String   // e.g., "e2e4"
+  fen           String   // position after move
+  moveNumber    Int
+  
+  createdAt     DateTime @default(now())
+}
+
+enum GameStatus {
+  WAITING
+  IN_PROGRESS
+  WHITE_WON
+  BLACK_WON
+  DRAW
+  ABANDONED
+}
+
