@@ -100,7 +100,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ game: newGame, joined: false })
   } catch (error) {
-    console.error('Error in lobby:', error)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error in lobby:', error)
+    }
     return NextResponse.json(
       { error: 'Ошибка создания/поиска игры' },
       { status: 500 }
