@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import CheckersBoard from '@/components/CheckersBoard'
-import { LogOut, Users, Clock, Trophy, ArrowLeft, BookOpen } from 'lucide-react'
+import { LogOut, Users, Clock, Trophy, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 function GameContent() {
@@ -348,41 +348,6 @@ function GameContent() {
                 </div>
               </motion.div>
             )}
-
-            {/* How to Play Section */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className="glass-dark rounded-2xl p-4 sm:p-6"
-            >
-              <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
-                Как играть
-              </h2>
-              <div className="space-y-2 text-xs sm:text-sm text-gray-300">
-                <div className="flex items-start gap-2">
-                  <span className="text-blue-400 font-bold">1.</span>
-                  <span>Кликните на свою шашку (белую или черную)</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-blue-400 font-bold">2.</span>
-                  <span>Подсветятся возможные ходы (синие точки)</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-blue-400 font-bold">3.</span>
-                  <span>Кликните на клетку, куда хотите походить</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-blue-400 font-bold">4.</span>
-                  <span>Шашки ходят только по диагонали вперед</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-blue-400 font-bold">5.</span>
-                  <span className="text-yellow-400">Если можно взять шашку противника - это обязательно!</span>
-                </div>
-              </div>
-            </motion.div>
           </div>
         </div>
         </div>

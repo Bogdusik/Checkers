@@ -377,18 +377,6 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
           </div>
         </div>
       </motion.div>
-      
-      {/* Instructions */}
-      <div className="mt-4 glass-dark rounded-xl p-3 sm:p-4 max-w-md">
-        <h3 className="text-white font-semibold mb-2 text-sm sm:text-base">Как играть:</h3>
-        <ol className="text-gray-300 text-xs sm:text-sm space-y-1 list-decimal list-inside">
-          <li>Кликните на свою шашку (белую или черную)</li>
-          <li>Подсветятся возможные ходы (синие точки)</li>
-          <li>Кликните на клетку, куда хотите походить</li>
-          <li>Шашки ходят только по диагонали вперед</li>
-          <li>Если можно взять шашку противника - это обязательно!</li>
-        </ol>
-      </div>
     </div>
   )
 }
