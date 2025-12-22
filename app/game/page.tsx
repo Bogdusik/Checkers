@@ -57,8 +57,10 @@ function GameContent() {
 
     fetchGame()
     
-    // Poll for game updates every 2 seconds
-    const interval = setInterval(fetchGame, 2000)
+    // Poll for game updates every 1 second for faster updates
+    const interval = setInterval(() => {
+      fetchGame()
+    }, 1000)
     
     return () => clearInterval(interval)
   }, [gameId, user])

@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { makeMove, gameToFen, fenToGame, getGameStatus, type CheckersGame } from '@/lib/checkers'
 import { GameStatus } from '@prisma/client'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -13,6 +15,12 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
+
+    // Update user's lastLoginAt to track online status
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() }
+    })
 
     const body = await request.json()
     const { from, to } = body
