@@ -11,9 +11,32 @@ interface CheckersBoardProps {
   initialFen?: string
 }
 
-const SQUARE_SIZE = 70
 const BOARD_SIZE = 8
-const LABEL_SIZE = 25
+
+// Responsive label size
+const getLabelSize = (squareSize: number) => {
+  if (squareSize < 35) return 18 // Very small screens
+  if (squareSize < 45) return 20 // Small screens
+  return 25 // Normal screens
+}
+
+// Responsive square size based on screen width
+const getSquareSize = () => {
+  if (typeof window === 'undefined') return 70
+  const width = window.innerWidth
+  // Account for padding (2rem = 32px on each side) and labels (25px * 2)
+  const availableWidth = width - 64 - 50 // padding + labels
+  const maxSquareSize = Math.floor(availableWidth / 8)
+  
+  if (width < 640) { // Mobile (iPhone)
+    return Math.max(28, Math.min(35, maxSquareSize)) // Minimum 28px, max 35px
+  } else if (width < 768) { // Small tablets
+    return Math.min(45, maxSquareSize)
+  } else if (width < 1024) { // Tablets
+    return Math.min(55, maxSquareSize)
+  }
+  return Math.min(70, maxSquareSize) // Desktop
+}
 
 export default function CheckersBoard({ gameId, playerColor, onMove, initialFen }: CheckersBoardProps) {
   const [game, setGame] = useState<CheckersGame>(() => 
@@ -22,12 +45,23 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null)
   const [validMoves, setValidMoves] = useState<Square[]>([])
   const [isPlayingAgainstSelf, setIsPlayingAgainstSelf] = useState(false)
+  const [squareSize, setSquareSize] = useState(70)
 
   useEffect(() => {
     if (initialFen) {
       setGame(fenToGame(initialFen))
     }
   }, [initialFen])
+
+  // Update square size on window resize
+  useEffect(() => {
+    const updateSquareSize = () => {
+      setSquareSize(getSquareSize())
+    }
+    updateSquareSize()
+    window.addEventListener('resize', updateSquareSize)
+    return () => window.removeEventListener('resize', updateSquareSize)
+  }, [])
 
   // Poll for game updates
   useEffect(() => {
@@ -132,6 +166,8 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
   const renderPiece = (piece: { color: 'white' | 'black'; type: 'man' | 'king' }, row: number, col: number) => {
     const isSelected = selectedSquare === getSquareName(row, col)
     const isWhite = piece.color === 'white'
+    const pieceSize = Math.max(squareSize * 0.75, 20) // Piece is 75% of square, minimum 20px
+    const kingSize = squareSize < 40 ? 'text-lg' : squareSize < 50 ? 'text-xl' : 'text-2xl'
     
     return (
       <motion.div
@@ -142,13 +178,15 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
         className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
       >
         <div
-          className={`w-14 h-14 rounded-full border-3 shadow-2xl ${
+          className={`rounded-full border-3 shadow-2xl ${
             isSelected ? 'ring-4 ring-yellow-400 ring-opacity-80' : ''
           }`}
           style={{
+            width: `${pieceSize}px`,
+            height: `${pieceSize}px`,
             backgroundColor: isWhite ? '#FFFFFF' : '#000000',
             borderColor: isWhite ? '#D1D5DB' : '#374151',
-            borderWidth: '3px',
+            borderWidth: squareSize < 40 ? '2px' : '3px',
             boxShadow: isSelected 
               ? '0 0 0 4px rgba(250, 204, 21, 0.5), 0 4px 12px rgba(0,0,0,0.5)'
               : isWhite
@@ -157,7 +195,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
           }}
         >
           {piece.type === 'king' && (
-            <div className={`w-full h-full flex items-center justify-center text-2xl font-bold ${
+            <div className={`w-full h-full flex items-center justify-center ${kingSize} font-bold ${
               isWhite ? 'text-blue-600' : 'text-yellow-400'
             }`}>
               ♔
@@ -168,28 +206,30 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
     )
   }
 
-  const boardWidth = BOARD_SIZE * SQUARE_SIZE + LABEL_SIZE * 2
-  const boardHeight = BOARD_SIZE * SQUARE_SIZE + LABEL_SIZE * 2
+  const labelSize = getLabelSize(squareSize)
+  const boardWidth = BOARD_SIZE * squareSize + labelSize * 2
+  const boardHeight = BOARD_SIZE * squareSize + labelSize * 2
 
   return (
-    <div className="relative">
+    <div className="relative w-full flex justify-center">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="glass-dark rounded-2xl p-6 inline-block"
+        className="glass-dark rounded-2xl p-3 sm:p-4 lg:p-6 inline-block"
       >
         <div className="relative" style={{ width: boardWidth, height: boardHeight }}>
           {/* Row numbers (left side) */}
           {Array.from({ length: BOARD_SIZE }, (_, row) => (
             <div
               key={`row-${row}`}
-              className="absolute flex items-center justify-center text-white font-semibold text-lg"
+              className="absolute flex items-center justify-center text-white font-semibold"
               style={{
                 left: 0,
-                top: LABEL_SIZE + row * SQUARE_SIZE,
-                width: LABEL_SIZE,
-                height: SQUARE_SIZE,
+                top: labelSize + row * squareSize,
+                width: labelSize,
+                height: squareSize,
+                fontSize: squareSize < 40 ? '0.75rem' : squareSize < 50 ? '0.875rem' : '1.125rem',
               }}
             >
               {8 - row}
@@ -200,12 +240,13 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
           {Array.from({ length: BOARD_SIZE }, (_, col) => (
             <div
               key={`col-${col}`}
-              className="absolute flex items-center justify-center text-white font-semibold text-lg"
+              className="absolute flex items-center justify-center text-white font-semibold"
               style={{
-                left: LABEL_SIZE + col * SQUARE_SIZE,
-                top: BOARD_SIZE * SQUARE_SIZE + LABEL_SIZE,
-                width: SQUARE_SIZE,
-                height: LABEL_SIZE,
+                left: labelSize + col * squareSize,
+                top: BOARD_SIZE * squareSize + labelSize,
+                width: squareSize,
+                height: labelSize,
+                fontSize: squareSize < 40 ? '0.75rem' : squareSize < 50 ? '0.875rem' : '1.125rem',
               }}
             >
               {String.fromCharCode(104 - col)}
@@ -216,10 +257,10 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
           <div
             className="absolute"
             style={{
-              left: LABEL_SIZE,
-              top: LABEL_SIZE,
-              width: BOARD_SIZE * SQUARE_SIZE,
-              height: BOARD_SIZE * SQUARE_SIZE,
+              left: labelSize,
+              top: labelSize,
+              width: BOARD_SIZE * squareSize,
+              height: BOARD_SIZE * squareSize,
             }}
           >
             {Array.from({ length: BOARD_SIZE }, (_, row) =>
@@ -251,10 +292,10 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
                       isSelected ? 'ring-4 ring-yellow-400' : ''
                     } transition-all cursor-pointer hover:opacity-90 active:opacity-75`}
                     style={{
-                      left: col * SQUARE_SIZE,
-                      top: row * SQUARE_SIZE,
-                      width: SQUARE_SIZE,
-                      height: SQUARE_SIZE,
+                      left: col * squareSize,
+                      top: row * squareSize,
+                      width: squareSize,
+                      height: squareSize,
                       touchAction: 'none',
                       WebkitTapHighlightColor: 'transparent',
                       zIndex: piece ? 5 : 1,
@@ -263,7 +304,13 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
                     {piece && renderPiece(piece, row, col)}
                     {isValidMove && !piece && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 10 }}>
-                        <div className="w-4 h-4 rounded-full bg-blue-500 opacity-70"></div>
+                        <div 
+                          className="rounded-full bg-blue-500 opacity-70"
+                          style={{
+                            width: `${Math.max(squareSize * 0.2, 8)}px`,
+                            height: `${Math.max(squareSize * 0.2, 8)}px`,
+                          }}
+                        ></div>
                       </div>
                     )}
                   </div>
@@ -275,9 +322,9 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
       </motion.div>
       
       {/* Instructions */}
-      <div className="mt-4 glass-dark rounded-xl p-4 max-w-md">
-        <h3 className="text-white font-semibold mb-2">Как играть:</h3>
-        <ol className="text-gray-300 text-sm space-y-1 list-decimal list-inside">
+      <div className="mt-4 glass-dark rounded-xl p-3 sm:p-4 max-w-md">
+        <h3 className="text-white font-semibold mb-2 text-sm sm:text-base">Как играть:</h3>
+        <ol className="text-gray-300 text-xs sm:text-sm space-y-1 list-decimal list-inside">
           <li>Кликните на свою шашку (белую или черную)</li>
           <li>Подсветятся возможные ходы (синие точки)</li>
           <li>Кликните на клетку, куда хотите походить</li>

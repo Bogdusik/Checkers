@@ -74,3 +74,22 @@ body {
   transition: box-shadow 0.3s ease;
 }
 
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  /* Ensure touch targets are at least 44x44px for iOS */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent text size adjustment on iOS */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+  
+  /* Better scrolling on mobile */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+

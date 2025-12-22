@@ -48,33 +48,33 @@ export default function RegisterPage() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="glass-dark rounded-2xl p-8 w-full max-w-md shadow-2xl"
+        className="glass-dark rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl"
       >
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <motion.div
             animate={{ scale: [1, 1.1, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="inline-block mb-4"
+            className="inline-block mb-3 sm:mb-4"
           >
-            <UserPlus className="w-12 h-12 text-blue-400" />
+            <UserPlus className="w-10 h-10 sm:w-12 sm:h-12 text-blue-400" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-white mb-2">Регистрация</h1>
-          <p className="text-gray-400">Создайте новый аккаунт</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Регистрация</h1>
+          <p className="text-gray-400 text-sm sm:text-base">Создайте новый аккаунт</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="email"
                 value={email}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 required
-                className="w-full pl-10 pr-4 py-3 bg-black/30 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
+                className="w-full pl-9 sm:pl-10 pr-4 py-3 text-base sm:text-sm bg-black/30 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
                 placeholder="your@email.com"
               />
             </div>
@@ -85,7 +85,7 @@ export default function RegisterPage() {
               Username
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="text"
                 value={username}
@@ -93,7 +93,7 @@ export default function RegisterPage() {
                 required
                 minLength={3}
                 maxLength={20}
-                className="w-full pl-10 pr-4 py-3 bg-black/30 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
+                className="w-full pl-9 sm:pl-10 pr-4 py-3 text-base sm:text-sm bg-black/30 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
                 placeholder="username"
               />
             </div>
@@ -104,14 +104,14 @@ export default function RegisterPage() {
               Пароль
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input
                 type="password"
                 value={password}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full pl-10 pr-4 py-3 bg-black/30 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
+                className="w-full pl-9 sm:pl-10 pr-4 py-3 text-base sm:text-sm bg-black/30 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -130,14 +130,14 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg glow"
+            className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg glow text-base sm:text-sm"
           >
             {loading ? 'Регистрация...' : 'Зарегистрироваться'}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-400">
+        <div className="mt-4 sm:mt-6 text-center">
+          <p className="text-gray-400 text-sm sm:text-base">
             Уже есть аккаунт?{' '}
             <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
               Войти
