@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import CheckersBoard from '@/components/CheckersBoard'
-import { LogOut, Users, Clock, Trophy, ArrowLeft } from 'lucide-react'
+import { LogOut, Users, Clock, Trophy, ArrowLeft, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 
 function GameContent() {
@@ -185,8 +185,9 @@ function GameContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-2 sm:p-4">
-      <div className="container mx-auto max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-2 sm:p-4 flex items-start sm:items-center justify-center py-4 sm:py-8">
+      <div className="container mx-auto max-w-7xl w-full">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <Link
@@ -207,10 +208,12 @@ function GameContent() {
           </button>
         </div>
 
+        {/* Main Game Layout */}
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="lg:col-span-2 order-2 lg:order-1">
+          {/* Left Column - Board */}
+          <div className="lg:col-span-2 order-2 lg:order-1 flex items-center justify-center">
             {game.status === 'WAITING' && String(game.whitePlayerId) !== String(game.blackPlayerId) ? (
-              <div className="glass-dark rounded-2xl p-6 sm:p-12 text-center">
+              <div className="glass-dark rounded-2xl p-6 sm:p-12 text-center w-full">
                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Ожидание соперника</h2>
                 <p className="text-gray-300 mb-6 text-sm sm:text-base">Игра начнется, когда присоединится второй игрок</p>
                 <div className="flex items-center justify-center gap-2">
@@ -223,15 +226,18 @@ function GameContent() {
                 </div>
               </div>
             ) : (
-              <CheckersBoard
-                gameId={gameId!}
-                playerColor={playerColor}
-                onMove={(from, to) => handleMove(`${from}-${to}`)}
-                initialFen={game.fen}
-              />
+              <div className="w-full flex justify-center">
+                <CheckersBoard
+                  gameId={gameId!}
+                  playerColor={playerColor}
+                  onMove={(from, to) => handleMove(`${from}-${to}`)}
+                  initialFen={game.fen}
+                />
+              </div>
             )}
           </div>
 
+          {/* Right Column - Info Panels */}
           <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -339,6 +345,41 @@ function GameContent() {
                 </div>
               </motion.div>
             )}
+
+            {/* How to Play Section */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="glass-dark rounded-2xl p-4 sm:p-6"
+            >
+              <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
+                Как играть
+              </h2>
+              <div className="space-y-2 text-xs sm:text-sm text-gray-300">
+                <div className="flex items-start gap-2">
+                  <span className="text-blue-400 font-bold">1.</span>
+                  <span>Кликните на свою шашку (белую или черную)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-blue-400 font-bold">2.</span>
+                  <span>Подсветятся возможные ходы (синие точки)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-blue-400 font-bold">3.</span>
+                  <span>Кликните на клетку, куда хотите походить</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-blue-400 font-bold">4.</span>
+                  <span>Шашки ходят только по диагонали вперед</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-blue-400 font-bold">5.</span>
+                  <span className="text-yellow-400">Если можно взять шашку противника - это обязательно!</span>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
