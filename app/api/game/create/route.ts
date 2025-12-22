@@ -17,11 +17,21 @@ export async function POST(request: NextRequest) {
     const checkersGame = createNewGame()
     const initialFen = gameToFen(checkersGame)
 
+    // Randomly assign colors for fairness (only if opponent is provided)
+    let whitePlayerId = user.id
+    let blackPlayerId = opponentId || user.id
+    
+    if (opponentId && opponentId !== user.id) {
+      const isUserWhite = Math.random() < 0.5
+      whitePlayerId = isUserWhite ? user.id : opponentId
+      blackPlayerId = isUserWhite ? opponentId : user.id
+    }
+
     // Create game
     const game = await prisma.game.create({
       data: {
-        whitePlayerId: user.id,
-        blackPlayerId: opponentId || user.id, // For now, can play against self or wait for opponent
+        whitePlayerId,
+        blackPlayerId,
         status: opponentId ? 'IN_PROGRESS' : 'WAITING',
         startedAt: opponentId ? new Date() : null,
         fen: initialFen

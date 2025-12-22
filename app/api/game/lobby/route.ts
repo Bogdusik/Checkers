@@ -30,15 +30,20 @@ export async function GET(request: NextRequest) {
 
     // Find a game where we can join (white player is different and blackPlayerId equals whitePlayerId)
     const waitingGame = allWaitingGames.find(
-      (game: any) => game.whitePlayerId !== user.id && game.blackPlayerId === game.whitePlayerId
+      (game: any) => String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) === String(game.whitePlayerId)
     )
 
     if (waitingGame) {
-      // Join existing game
+      // Join existing game - randomly assign colors for fairness
+      const isUserWhite = Math.random() < 0.5
+      const whitePlayerId = isUserWhite ? user.id : waitingGame.whitePlayerId
+      const blackPlayerId = isUserWhite ? waitingGame.whitePlayerId : user.id
+      
       const updatedGame = await prisma.game.update({
         where: { id: waitingGame.id },
         data: {
-          blackPlayerId: user.id,
+          whitePlayerId,
+          blackPlayerId,
           status: 'IN_PROGRESS',
           startedAt: new Date(),
           fen: waitingGame.fen || gameToFen(createNewGame())

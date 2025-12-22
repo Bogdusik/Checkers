@@ -33,36 +33,77 @@ function GameContent() {
   useEffect(() => {
     if (!gameId || !user) return
 
+    let isMounted = true
+
     const fetchGame = async () => {
+      if (!isMounted) return
+      
       try {
-        const res = await fetch(`/api/game/${gameId}`)
+        const res = await fetch(`/api/game/${gameId}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        })
+        
+        if (!isMounted) return
+        
         const data = await res.json()
-        if (data.game) {
+        if (data.game && isMounted) {
           setGame(data.game)
-          // Determine player color
-          if (data.game.whitePlayerId === user.id) {
-            setPlayerColor('white')
-          } else if (data.game.blackPlayerId === user.id) {
-            setPlayerColor('black')
+          
+          // Determine player color - MUST be recalculated every time
+          // This is critical - we need to check which player the current user is
+          let newPlayerColor: 'white' | 'black' = 'white'
+          
+          // Use strict comparison and check both IDs
+          const isWhitePlayer = String(data.game.whitePlayerId) === String(user.id)
+          const isBlackPlayer = String(data.game.blackPlayerId) === String(user.id)
+          
+          if (isWhitePlayer) {
+            newPlayerColor = 'white'
+          } else if (isBlackPlayer) {
+            newPlayerColor = 'black'
+          } else {
+            // User is not part of this game - shouldn't happen but handle gracefully
+            if (process.env.NODE_ENV === 'development') {
+              console.error('User is not part of this game:', {
+                userId: user.id,
+                whitePlayerId: data.game.whitePlayerId,
+                blackPlayerId: data.game.blackPlayerId
+              })
+            }
+            // Default to white if user is not found (shouldn't happen)
+            newPlayerColor = 'white'
           }
-          // If playing against self, allow playing both colors
-          // We'll handle this in CheckersBoard by checking if both players are the same
+          
+          if (isMounted) {
+            setPlayerColor(newPlayerColor)
+          }
         }
-        setLoading(false)
+        
+        if (isMounted) {
+          setLoading(false)
+        }
       } catch (error) {
-        console.error('Error fetching game:', error)
-        setLoading(false)
+        if (process.env.NODE_ENV === 'development' && isMounted) {
+          console.error('Error fetching game:', error)
+        }
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
     fetchGame()
     
-    // Poll for game updates every 1 second for faster updates
+    // Poll for game updates every 1.5 seconds (optimized for performance)
     const interval = setInterval(() => {
       fetchGame()
-    }, 1000)
+    }, 1500)
     
-    return () => clearInterval(interval)
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
   }, [gameId, user])
 
   const handleMove = async (moveString: string) => {
@@ -78,26 +119,26 @@ function GameContent() {
       
       if (res.ok) {
         const data = await res.json()
-        // Refresh game state after move
-        const gameRes = await fetch(`/api/game/${gameId}`)
-        const gameData = await gameRes.json()
-        if (gameData.game) {
-          setGame(gameData.game)
-          // If game ended, refresh user stats
-          if (gameData.game.status !== 'IN_PROGRESS' && gameData.game.status !== 'WAITING') {
-            const userRes = await fetch('/api/auth/me')
-            const userData = await userRes.json()
-            if (userData.user) {
-              setUser(userData.user)
-            }
-          }
+        // Polling will update game state automatically, no need for extra fetch
+        // Only refresh user stats if game ended
+        if (data.game && data.game.status !== 'IN_PROGRESS' && data.game.status !== 'WAITING') {
+          fetch('/api/auth/me')
+            .then(res => res.json())
+            .then(userData => {
+              if (userData.user) {
+                setUser(userData.user)
+              }
+            })
+            .catch(() => {}) // Silently fail, stats will update on next poll
         }
       } else {
-        const errorData = await res.json()
+        const errorData = await res.json().catch(() => ({ error: 'Ошибка хода' }))
         alert(errorData.error || 'Ошибка хода')
       }
     } catch (error) {
-      console.error('Error making move:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error making move:', error)
+      }
       alert('Ошибка выполнения хода')
     }
   }
@@ -165,7 +206,7 @@ function GameContent() {
 
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           <div className="lg:col-span-2 order-2 lg:order-1">
-            {game.status === 'WAITING' && game.whitePlayerId !== game.blackPlayerId ? (
+            {game.status === 'WAITING' && String(game.whitePlayerId) !== String(game.blackPlayerId) ? (
               <div className="glass-dark rounded-2xl p-6 sm:p-12 text-center">
                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Ожидание соперника</h2>
                 <p className="text-gray-300 mb-6 text-sm sm:text-base">Игра начнется, когда присоединится второй игрок</p>
@@ -199,20 +240,31 @@ function GameContent() {
                 Игроки
               </h2>
               <div className="space-y-2 sm:space-y-3">
-                <div className="flex items-center justify-between p-2 sm:p-3 bg-black/20 rounded-lg">
+                <div className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
+                  playerColor === 'white' ? 'bg-blue-500/20 border-2 border-blue-500/50' : 'bg-black/20'
+                }`}>
                   <span className="text-white text-sm sm:text-base">Белые</span>
                   <span className="text-gray-300 text-xs sm:text-sm truncate ml-2">
-                    {game.whitePlayerId === game.blackPlayerId 
+                    {String(game.whitePlayerId) === String(game.blackPlayerId)
                       ? (game.whitePlayer?.username || user?.username || 'Вы')
                       : game.whitePlayer?.username || 'Ожидание...'}
+                    {String(game.whitePlayerId) === String(user?.id) && ' (Вы)'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between p-2 sm:p-3 bg-black/20 rounded-lg">
+                <div className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
+                  playerColor === 'black' ? 'bg-blue-500/20 border-2 border-blue-500/50' : 'bg-black/20'
+                }`}>
                   <span className="text-white text-sm sm:text-base">Черные</span>
                   <span className="text-gray-300 text-xs sm:text-sm truncate ml-2">
-                    {game.whitePlayerId === game.blackPlayerId 
+                    {String(game.whitePlayerId) === String(game.blackPlayerId)
                       ? (game.blackPlayer?.username || user?.username || 'Вы')
                       : game.blackPlayer?.username || 'Ожидание...'}
+                    {String(game.blackPlayerId) === String(user?.id) && ' (Вы)'}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-gray-700 text-xs text-gray-400">
+                  Ваш цвет: <span className="text-white font-semibold">
+                    {playerColor === 'white' ? 'Белые' : 'Черные'}
                   </span>
                 </div>
               </div>
