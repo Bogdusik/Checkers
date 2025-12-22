@@ -61,7 +61,9 @@ export async function GET(
 
     return NextResponse.json({ game })
   } catch (error) {
-    console.error('Error fetching game:', error)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching game:', error)
+    }
     return NextResponse.json(
       { error: 'Ошибка получения игры' },
       { status: 500 }

@@ -117,8 +117,8 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
       }
     }
 
-    // Poll every 1.5 seconds (optimized for performance)
-    const interval = setInterval(pollGame, 1500)
+    // Poll every 500ms for very fast updates during active gameplay
+    const interval = setInterval(pollGame, 500)
     pollGame() // Initial fetch
 
     return () => {
@@ -189,7 +189,24 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
             onMove(selectedSquare, square)
           }
           
-          // Polling will update game state automatically, no need for manual refresh
+          // Trigger immediate poll to get server state faster
+          setTimeout(() => {
+            fetch(`/api/game/${gameId}`, {
+              cache: 'no-store',
+              headers: { 'Cache-Control': 'no-cache' }
+            })
+              .then(res => res.json())
+              .then(data => {
+                if (data.game && data.game.fen && data.game.fen !== lastFenRef.current) {
+                  const serverGame = fenToGame(data.game.fen)
+                  setGame(serverGame)
+                  lastFenRef.current = data.game.fen
+                  setSelectedSquare(null)
+                  setValidMoves([])
+                }
+              })
+              .catch(() => {}) // Silently fail, polling will catch up
+          }, 300) // Small delay to ensure server processed the move
         } else {
           // Move failed, deselect
           setSelectedSquare(null)

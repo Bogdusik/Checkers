@@ -95,10 +95,10 @@ function GameContent() {
 
     fetchGame()
     
-    // Poll for game updates every 1.5 seconds (optimized for performance)
+    // Poll for game updates every 500ms for very fast synchronization
     const interval = setInterval(() => {
       fetchGame()
-    }, 1500)
+    }, 500)
     
     return () => {
       isMounted = false
@@ -119,7 +119,10 @@ function GameContent() {
       
       if (res.ok) {
         const data = await res.json()
-        // Polling will update game state automatically, no need for extra fetch
+        // Immediately update game state after move for instant feedback
+        if (data.game) {
+          setGame(data.game)
+        }
         // Only refresh user stats if game ended
         if (data.game && data.game.status !== 'IN_PROGRESS' && data.game.status !== 'WAITING') {
           fetch('/api/auth/me')
