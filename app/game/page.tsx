@@ -340,127 +340,137 @@ function GameContent() {
           </div>
 
           <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
-            {game.status === 'IN_PROGRESS' && game.drawOfferBy && (
-              <DrawOffer
-                gameId={gameId!}
-                drawOfferBy={game.drawOfferBy}
-                currentUserId={user?.id || ''}
-                onDrawAccepted={handleDrawAccepted}
-              />
-            )}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="glass-dark rounded-2xl p-4 sm:p-6"
-            >
-              <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                Игроки
-              </h2>
-              <div className="space-y-2 sm:space-y-3">
-                <div className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
-                  playerColor === 'white' ? 'bg-blue-500/20 border-2 border-blue-500/50' : 'bg-black/20'
-                }`}>
-                  <span className="text-white text-sm sm:text-base">Белые</span>
-                  <span className="text-gray-300 text-xs sm:text-sm truncate ml-2">
-                    {String(game.whitePlayerId) === String(game.blackPlayerId)
-                      ? (game.whitePlayer?.username || user?.username || 'Вы')
-                      : game.whitePlayer?.username || 'Ожидание...'}
-                    {String(game.whitePlayerId) === String(user?.id) && ' (Вы)'}
-                  </span>
-                </div>
-                <div className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
-                  playerColor === 'black' ? 'bg-blue-500/20 border-2 border-blue-500/50' : 'bg-black/20'
-                }`}>
-                  <span className="text-white text-sm sm:text-base">Черные</span>
-                  <span className="text-gray-300 text-xs sm:text-sm truncate ml-2">
-                    {String(game.whitePlayerId) === String(game.blackPlayerId)
-                      ? (game.blackPlayer?.username || user?.username || 'Вы')
-                      : game.blackPlayer?.username || 'Ожидание...'}
-                    {String(game.blackPlayerId) === String(user?.id) && ' (Вы)'}
-                  </span>
-                </div>
-                <div className="pt-2 border-t border-gray-700 text-xs text-gray-400">
-                  Ваш цвет: <span className="text-white font-semibold">
-                    {playerColor === 'white' ? 'Белые' : 'Черные'}
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="glass-dark rounded-2xl p-4 sm:p-6"
-            >
-              <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
-                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
-                Статус игры
-              </h2>
-              <div className="space-y-2 text-sm sm:text-base">
-                <div className="text-gray-300">
-                  Статус: <span className="text-white font-semibold">
-                    {game.status === 'WAITING' ? 'Ожидание соперника' : 
-                     game.status === 'IN_PROGRESS' ? 'В процессе' :
-                     game.status === 'WHITE_WON' ? 'Белые победили' :
-                     game.status === 'BLACK_WON' ? 'Черные победили' :
-                     game.status === 'DRAW' ? 'Ничья' : game.status}
-                  </span>
-                </div>
-                {game.status === 'IN_PROGRESS' && game.fen && (
-                  <div className="text-gray-300">
-                    Ход: <span className="text-white font-semibold">
-                      {game.fen?.split(' ')[1] === 'w' ? 'Белые' : 'Черные'}
+            {/* Game Info Group */}
+            <div className="space-y-3 sm:space-y-4">
+              {game.status === 'IN_PROGRESS' && game.drawOfferBy && (
+                <DrawOffer
+                  gameId={gameId!}
+                  drawOfferBy={game.drawOfferBy}
+                  currentUserId={user?.id || ''}
+                  onDrawAccepted={handleDrawAccepted}
+                />
+              )}
+              
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="glass-dark rounded-2xl p-4 sm:p-6"
+              >
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+                  Игроки
+                </h2>
+                <div className="space-y-2 sm:space-y-3">
+                  <div className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
+                    playerColor === 'white' ? 'bg-blue-500/20 border-2 border-blue-500/50' : 'bg-black/20'
+                  }`}>
+                    <span className="text-white text-sm sm:text-base">Белые</span>
+                    <span className="text-gray-300 text-xs sm:text-sm truncate ml-2">
+                      {String(game.whitePlayerId) === String(game.blackPlayerId)
+                        ? (game.whitePlayer?.username || user?.username || 'Вы')
+                        : game.whitePlayer?.username || 'Ожидание...'}
+                      {String(game.whitePlayerId) === String(user?.id) && ' (Вы)'}
                     </span>
                   </div>
-                )}
-                {game.status === 'IN_PROGRESS' && game.timeControl && (
-                  <div className="text-gray-300 mt-2">
-                    <GameTimer
-                      timeLeft={playerColor === 'white' ? game.whiteTimeLeft : game.blackTimeLeft}
-                      isActive={game.status === 'IN_PROGRESS' && game.fen?.split(' ')[1] === (playerColor === 'white' ? 'w' : 'b')}
-                    />
+                  <div className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
+                    playerColor === 'black' ? 'bg-blue-500/20 border-2 border-blue-500/50' : 'bg-black/20'
+                  }`}>
+                    <span className="text-white text-sm sm:text-base">Черные</span>
+                    <span className="text-gray-300 text-xs sm:text-sm truncate ml-2">
+                      {String(game.whitePlayerId) === String(game.blackPlayerId)
+                        ? (game.blackPlayer?.username || user?.username || 'Вы')
+                        : game.blackPlayer?.username || 'Ожидание...'}
+                      {String(game.blackPlayerId) === String(user?.id) && ' (Вы)'}
+                    </span>
                   </div>
-                )}
-                {game.status === 'WAITING' && (
-                  <div className="text-blue-400 text-xs sm:text-sm mt-2">
-                    Ожидание второго игрока...
+                  <div className="pt-2 border-t border-gray-700 text-xs text-gray-400">
+                    Ваш цвет: <span className="text-white font-semibold">
+                      {playerColor === 'white' ? 'Белые' : 'Черные'}
+                    </span>
                   </div>
-                )}
-                {game.status === 'IN_PROGRESS' && (
-                  <div className="mt-3 space-y-2">
-                    <button
-                      onClick={handleOfferDraw}
-                      disabled={!!game.drawOfferBy}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 border-2 border-yellow-500/50 text-yellow-400 rounded-lg transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Minus className="w-4 h-4" />
-                      Предложить ничью
-                    </button>
-                    <button
-                      onClick={handleResign}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border-2 border-red-500/50 text-red-400 rounded-lg transition-all text-sm font-semibold"
-                    >
-                      <Flag className="w-4 h-4" />
-                      Сдаться
-                    </button>
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="glass-dark rounded-2xl p-4 sm:p-6"
+              >
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                  Статус игры
+                </h2>
+                <div className="space-y-3">
+                  <div className="space-y-2 text-sm sm:text-base">
+                    <div className="text-gray-300">
+                      Статус: <span className="text-white font-semibold">
+                        {game.status === 'WAITING' ? 'Ожидание соперника' : 
+                         game.status === 'IN_PROGRESS' ? 'В процессе' :
+                         game.status === 'WHITE_WON' ? 'Белые победили' :
+                         game.status === 'BLACK_WON' ? 'Черные победили' :
+                         game.status === 'DRAW' ? 'Ничья' : game.status}
+                      </span>
+                    </div>
+                    {game.status === 'IN_PROGRESS' && game.fen && (
+                      <div className="text-gray-300">
+                        Ход: <span className="text-white font-semibold">
+                          {game.fen?.split(' ')[1] === 'w' ? 'Белые' : 'Черные'}
+                        </span>
+                      </div>
+                    )}
+                    {game.status === 'IN_PROGRESS' && game.timeControl && (
+                      <div className="text-gray-300">
+                        <GameTimer
+                          timeLeft={playerColor === 'white' ? game.whiteTimeLeft : game.blackTimeLeft}
+                          isActive={game.status === 'IN_PROGRESS' && game.fen?.split(' ')[1] === (playerColor === 'white' ? 'w' : 'b')}
+                        />
+                      </div>
+                    )}
+                    {game.status === 'WAITING' && (
+                      <div className="text-blue-400 text-xs sm:text-sm">
+                        Ожидание второго игрока...
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </motion.div>
+                  {game.status === 'IN_PROGRESS' && (
+                    <div className="pt-3 border-t border-gray-700 space-y-2">
+                      <button
+                        onClick={handleOfferDraw}
+                        disabled={!!game.drawOfferBy}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 border-2 border-yellow-500/50 text-yellow-400 rounded-lg transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Minus className="w-4 h-4" />
+                        Предложить ничью
+                      </button>
+                      <button
+                        onClick={handleResign}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border-2 border-red-500/50 text-red-400 rounded-lg transition-all text-sm font-semibold"
+                      >
+                        <Flag className="w-4 h-4" />
+                        Сдаться
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
 
-            {game.moves && game.moves.length > 0 && (
-              <MoveHistory 
-                moves={game.moves} 
-                currentPlayer={game.fen?.split(' ')[1] === 'w' ? 'white' : 'black'}
-              />
-            )}
+            {/* Game History & Chat Group */}
+            <div className="space-y-3 sm:space-y-4">
+              {game.moves && game.moves.length > 0 && (
+                <MoveHistory 
+                  moves={game.moves} 
+                  currentPlayer={game.fen?.split(' ')[1] === 'w' ? 'white' : 'black'}
+                />
+              )}
 
-            {game.status === 'IN_PROGRESS' && (
-              <GameChat gameId={gameId!} currentUserId={user?.id || ''} />
-            )}
+              {game.status === 'IN_PROGRESS' && (
+                <GameChat gameId={gameId!} currentUserId={user?.id || ''} />
+              )}
+            </div>
 
+            {/* Statistics Group */}
             {user?.statistics && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -472,22 +482,22 @@ function GameContent() {
                   <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
                   Ваша статистика
                 </h2>
-                <div className="space-y-2 text-xs sm:text-sm">
-                  <div className="flex justify-between text-gray-300">
-                    <span>Игр:</span>
-                    <span className="text-white font-semibold">{user.statistics?.totalGames || 0}</span>
+                <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
+                  <div className="flex flex-col">
+                    <span className="text-gray-400 mb-1">Игр</span>
+                    <span className="text-white font-semibold text-lg">{user.statistics?.totalGames || 0}</span>
                   </div>
-                  <div className="flex justify-between text-gray-300">
-                    <span>Побед:</span>
-                    <span className="text-green-400 font-semibold">{user.statistics?.wins || 0}</span>
+                  <div className="flex flex-col">
+                    <span className="text-gray-400 mb-1">Побед</span>
+                    <span className="text-green-400 font-semibold text-lg">{user.statistics?.wins || 0}</span>
                   </div>
-                  <div className="flex justify-between text-gray-300">
-                    <span>Поражений:</span>
-                    <span className="text-red-400 font-semibold">{user.statistics?.losses || 0}</span>
+                  <div className="flex flex-col">
+                    <span className="text-gray-400 mb-1">Поражений</span>
+                    <span className="text-red-400 font-semibold text-lg">{user.statistics?.losses || 0}</span>
                   </div>
-                  <div className="flex justify-between text-gray-300">
-                    <span>Ничьих:</span>
-                    <span className="text-yellow-400 font-semibold">{user.statistics?.draws || 0}</span>
+                  <div className="flex flex-col">
+                    <span className="text-gray-400 mb-1">Ничьих</span>
+                    <span className="text-yellow-400 font-semibold text-lg">{user.statistics?.draws || 0}</span>
                   </div>
                 </div>
               </motion.div>
