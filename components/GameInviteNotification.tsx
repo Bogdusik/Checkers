@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, X, Check, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { toastManager } from './Toast'
 
 interface GameInvite {
   id: string
@@ -63,11 +64,11 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
         // Navigate to game
         router.push(`/game?id=${data.game.id}`)
       } else {
-        alert(data.error || 'Ошибка принятия приглашения')
+        toastManager.error(data.error || 'Ошибка принятия приглашения')
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') console.error('Error accepting invite:', error)
-      alert('Ошибка принятия приглашения')
+      toastManager.error('Ошибка принятия приглашения')
     }
   }
 

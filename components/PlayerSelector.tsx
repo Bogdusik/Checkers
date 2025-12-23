@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, User, Wifi, WifiOff, X, Send } from 'lucide-react'
+import { toastManager } from './Toast'
 
 interface Player {
   id: string
@@ -65,14 +66,14 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
       })
       const data = await res.json()
       if (data.invite) {
-        alert(`Приглашение отправлено ${data.invite.toUser.username}`)
+        toastManager.success(`Приглашение отправлено ${data.invite.toUser.username}`)
         onClose()
       } else {
-        alert(data.error || 'Ошибка отправки приглашения')
+        toastManager.error(data.error || 'Ошибка отправки приглашения')
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') console.error('Error sending invite:', error)
-      alert('Ошибка отправки приглашения')
+      toastManager.error('Ошибка отправки приглашения')
     }
   }
 

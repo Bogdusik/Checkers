@@ -4,8 +4,13 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import CheckersBoard from '@/components/CheckersBoard'
-import { LogOut, Users, Clock, Trophy, ArrowLeft } from 'lucide-react'
+import MoveHistory from '@/components/MoveHistory'
+import DrawOffer from '@/components/DrawOffer'
+import GameTimer from '@/components/GameTimer'
+import GameChat from '@/components/GameChat'
+import { LogOut, Users, Clock, Trophy, ArrowLeft, Flag, Handshake } from 'lucide-react'
 import Link from 'next/link'
+import { toastManager } from '@/components/Toast'
 
 function GameContent() {
   const router = useRouter()
@@ -16,6 +21,7 @@ function GameContent() {
   const [game, setGame] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [playerColor, setPlayerColor] = useState<'white' | 'black'>('white')
+  const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null)
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -49,6 +55,15 @@ function GameContent() {
         const data = await res.json()
         if (data.game && isMounted) {
           setGame(data.game)
+          
+          // Update last move if there are moves
+          if (data.game.moves && data.game.moves.length > 0) {
+            const lastMoveData = data.game.moves[data.game.moves.length - 1]
+            if (lastMoveData.move) {
+              const [from, to] = lastMoveData.move.split('-')
+              setLastMove({ from, to })
+            }
+          }
           
           // Determine player color - MUST be recalculated every time
           // This is critical - we need to check which player the current user is
@@ -135,11 +150,11 @@ function GameContent() {
         }
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Ошибка хода' }))
-        alert(errorData.error || 'Ошибка хода')
+        toastManager.error(errorData.error || 'Ошибка хода')
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') console.error('Error making move:', error)
-      alert('Ошибка выполнения хода')
+      toastManager.error('Ошибка выполнения хода')
     }
   }
 
@@ -147,6 +162,93 @@ function GameContent() {
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/')
     router.refresh()
+  }
+
+  const handleResign = async () => {
+    if (!gameId) return
+    
+    // Use a more user-friendly confirmation
+    const confirmed = window.confirm('Вы уверены, что хотите сдаться? Игра будет завершена.')
+    if (!confirmed) return
+
+    try {
+      const res = await fetch(`/api/game/${gameId}/resign`, {
+        method: 'POST'
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        if (data.game) {
+          setGame(data.game)
+          toastManager.info('Вы сдались. Игра завершена.')
+          // Refresh user stats
+          fetch('/api/auth/me')
+            .then(res => res.json())
+            .then(userData => {
+              if (userData.user) {
+                setUser(userData.user)
+              }
+            })
+            .catch(() => {})
+        }
+      } else {
+        const errorData = await res.json().catch(() => ({ error: 'Ошибка при сдаче' }))
+        toastManager.error(errorData.error || 'Ошибка при сдаче')
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') console.error('Error resigning:', error)
+      toastManager.error('Ошибка при сдаче')
+    }
+  }
+
+  const handleOfferDraw = async () => {
+    if (!gameId) return
+
+    try {
+      const res = await fetch(`/api/game/${gameId}/draw`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'offer' })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toastManager.success('Предложение ничьей отправлено')
+        // Refresh game to show draw offer
+        const gameRes = await fetch(`/api/game/${gameId}`, { cache: 'no-store' })
+        const gameData = await gameRes.json()
+        if (gameData.game) {
+          setGame(gameData.game)
+        }
+      } else {
+        toastManager.error(data.error || 'Ошибка предложения ничьей')
+      }
+    } catch (error) {
+      toastManager.error('Ошибка предложения ничьей')
+    }
+  }
+
+  const handleDrawAccepted = () => {
+    // Refresh game state
+    if (gameId) {
+      fetch(`/api/game/${gameId}`, { cache: 'no-store' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.game) {
+            setGame(data.game)
+          }
+        })
+        .catch(() => {})
+      
+      // Refresh user stats
+      fetch('/api/auth/me')
+        .then(res => res.json())
+        .then(userData => {
+          if (userData.user) {
+            setUser(userData.user)
+          }
+        })
+        .catch(() => {})
+    }
   }
 
   if (loading) {
@@ -231,12 +333,21 @@ function GameContent() {
                   playerColor={playerColor}
                   onMove={(from, to) => handleMove(`${from}-${to}`)}
                   initialFen={game.fen}
+                  lastMove={lastMove}
                 />
               </div>
             )}
           </div>
 
           <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
+            {game.status === 'IN_PROGRESS' && game.drawOfferBy && (
+              <DrawOffer
+                gameId={gameId!}
+                drawOfferBy={game.drawOfferBy}
+                currentUserId={user?.id || ''}
+                onDrawAccepted={handleDrawAccepted}
+              />
+            )}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -304,13 +415,51 @@ function GameContent() {
                     </span>
                   </div>
                 )}
+                {game.status === 'IN_PROGRESS' && game.timeControl && (
+                  <div className="text-gray-300 mt-2">
+                    <GameTimer
+                      timeLeft={playerColor === 'white' ? game.whiteTimeLeft : game.blackTimeLeft}
+                      isActive={game.status === 'IN_PROGRESS' && game.fen?.split(' ')[1] === (playerColor === 'white' ? 'w' : 'b')}
+                    />
+                  </div>
+                )}
                 {game.status === 'WAITING' && (
                   <div className="text-blue-400 text-xs sm:text-sm mt-2">
                     Ожидание второго игрока...
                   </div>
                 )}
+                {game.status === 'IN_PROGRESS' && (
+                  <div className="mt-3 space-y-2">
+                    <button
+                      onClick={handleOfferDraw}
+                      disabled={!!game.drawOfferBy}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 border-2 border-yellow-500/50 text-yellow-400 rounded-lg transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Handshake className="w-4 h-4" />
+                      Предложить ничью
+                    </button>
+                    <button
+                      onClick={handleResign}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border-2 border-red-500/50 text-red-400 rounded-lg transition-all text-sm font-semibold"
+                    >
+                      <Flag className="w-4 h-4" />
+                      Сдаться
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
+
+            {game.moves && game.moves.length > 0 && (
+              <MoveHistory 
+                moves={game.moves} 
+                currentPlayer={game.fen?.split(' ')[1] === 'w' ? 'white' : 'black'}
+              />
+            )}
+
+            {game.status === 'IN_PROGRESS' && (
+              <GameChat gameId={gameId!} currentUserId={user?.id || ''} />
+            )}
 
             {user?.statistics && (
               <motion.div

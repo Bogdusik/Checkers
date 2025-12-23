@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { Gamepad2, Trophy, TrendingUp } from 'lucide-react'
 import PlayerSelector from '@/components/PlayerSelector'
 import GameInviteNotification from '@/components/GameInviteNotification'
+import { toastManager } from '@/components/Toast'
 
 export default function Home() {
   const router = useRouter()
@@ -179,11 +180,11 @@ export default function Home() {
               if (data.game) {
                 router.push(`/game?id=${data.game.id}`)
               } else {
-                alert('Ошибка создания игры')
+                toastManager.error(data.error || 'Ошибка создания игры')
               }
             } catch (error) {
               if (process.env.NODE_ENV === 'development') console.error('Error creating game:', error)
-              alert('Ошибка создания игры')
+              toastManager.error('Ошибка создания игры')
             }
           }}
           currentUserId={user?.id || ''}
