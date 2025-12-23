@@ -25,6 +25,7 @@ model User {
   receivedInvites GameInvite[] @relation("ReceivedInvites")
   requestedFriends Friend[] @relation("RequestedFriends")
   receivedFriends  Friend[] @relation("ReceivedFriends")
+  gameMessages  GameMessage[]
 }
 
 model UserStatistics {
@@ -39,6 +40,7 @@ model UserStatistics {
   
   totalMoves    Int      @default(0)
   averageGameTime Int     @default(0) // in seconds
+  rating        Int      @default(1000) // ELO rating
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -58,6 +60,12 @@ model Game {
   moves         GameMove[]
   fen           String   @default("")
   invites       GameInvite[]
+  messages      GameMessage[]
+  
+  drawOfferBy   String?  // User ID who offered draw
+  whiteTimeLeft Int?     // Time left for white player in seconds
+  blackTimeLeft Int?     // Time left for black player in seconds
+  timeControl   Int?     // Time control per move in seconds (null = no time limit)
   
   startedAt     DateTime?
   endedAt       DateTime?
@@ -79,6 +87,19 @@ model GameMove {
   moveNumber    Int
   
   createdAt     DateTime @default(now())
+}
+
+model GameMessage {
+  id            String   @id @default(cuid())
+  gameId        String
+  game          Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  message       String
+  createdAt     DateTime @default(now())
+  
+  @@index([gameId, createdAt])
 }
 
 enum GameStatus {

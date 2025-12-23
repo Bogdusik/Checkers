@@ -43,8 +43,7 @@ export async function GET(
           }
         },
         moves: {
-          orderBy: { moveNumber: 'asc' },
-          take: 50
+          orderBy: { moveNumber: 'asc' }
         }
       }
     })
