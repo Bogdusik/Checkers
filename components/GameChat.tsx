@@ -24,14 +24,32 @@ export default function GameChat({ gameId, currentUserId }: GameChatProps) {
   const [newMessage, setNewMessage] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const shouldAutoScrollRef = useRef(true)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messagesContainerRef.current && shouldAutoScrollRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
   }
 
+  // Check if user is near bottom of chat
+  const checkIfNearBottom = () => {
+    if (!messagesContainerRef.current) return false
+    const container = messagesContainerRef.current
+    const threshold = 100 // pixels from bottom
+    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold
+  }
+
+  // Only auto-scroll if user is near bottom or when sending a message
   useEffect(() => {
-    scrollToBottom()
+    if (messages.length > 0) {
+      shouldAutoScrollRef.current = checkIfNearBottom()
+      if (shouldAutoScrollRef.current) {
+        scrollToBottom()
+      }
+    }
   }, [messages])
 
   const fetchMessages = async () => {
@@ -69,7 +87,10 @@ export default function GameChat({ gameId, currentUserId }: GameChatProps) {
 
       if (res.ok) {
         setNewMessage('')
-        fetchMessages()
+        shouldAutoScrollRef.current = true
+        fetchMessages().then(() => {
+          setTimeout(() => scrollToBottom(), 100)
+        })
         inputRef.current?.focus()
       }
     } catch (error) {
@@ -115,7 +136,13 @@ export default function GameChat({ gameId, currentUserId }: GameChatProps) {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-2 mb-3">
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto space-y-2 mb-3"
+        onScroll={() => {
+          shouldAutoScrollRef.current = checkIfNearBottom()
+        }}
+      >
         {messages.length === 0 ? (
           <div className="text-gray-400 text-sm text-center py-4">
             Нет сообщений. Начните общение!
