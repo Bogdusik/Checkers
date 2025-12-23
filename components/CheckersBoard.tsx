@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { createNewGame, gameToFen, fenToGame, makeMove, getValidMoves, type CheckersGame, type Square } from '@/lib/checkers'
 
@@ -51,6 +51,13 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
   const pendingFenRef = useRef<string | null>(null)
   const pendingUntilRef = useRef<number>(0)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const visibilityListenerSetRef = useRef(false)
+
+  // Memoize valid moves for current selection + game snapshot
+  const memoizedValidMoves = useMemo(() => {
+    if (!selectedSquare) return []
+    return getValidMoves(game, selectedSquare)
+  }, [game, selectedSquare])
 
   useEffect(() => {
     if (initialFen && initialFen !== lastFenRef.current) {
@@ -164,6 +171,17 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
       }
     }
 
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible' && !eventSourceRef.current) {
+        attachSse()
+      }
+    }
+
+    if (!visibilityListenerSetRef.current && typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisibility)
+      visibilityListenerSetRef.current = true
+    }
+
     attachSse()
 
     return () => {
@@ -173,6 +191,10 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
         eventSourceRef.current = null
       }
       if (fallbackInterval) clearInterval(fallbackInterval)
+      if (visibilityListenerSetRef.current && typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibility)
+        visibilityListenerSetRef.current = false
+      }
     }
   }, [gameId])
 
@@ -218,7 +240,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
 
     // If a piece is selected, try to move
     if (selectedSquare) {
-      if (validMoves.includes(square)) {
+      if (memoizedValidMoves.includes(square)) {
         const result = makeMove(game, selectedSquare, square)
         if (result.success) {
           // Optimistically update local state and mark pending to avoid bounce back
@@ -346,7 +368,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
                 const square = getSquareName(row, col)
                 const isDark = isDarkSquare(row, col)
                 const piece = game.board.get(square)
-                const isValidMove = validMoves.includes(square)
+                const isValidMove = memoizedValidMoves.includes(square)
                 const isSelected = selectedSquare === square
 
                 return (
