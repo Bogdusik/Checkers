@@ -50,6 +50,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
   // Protect against visual "bounce back" when server responds a tick later with stale FEN
   const pendingFenRef = useRef<string | null>(null)
   const pendingUntilRef = useRef<number>(0)
+  const eventSourceRef = useRef<EventSource | null>(null)
 
   useEffect(() => {
     if (initialFen && initialFen !== lastFenRef.current) {
@@ -75,80 +76,105 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
     return () => window.removeEventListener('resize', updateSquareSize)
   }, [])
 
-  // Poll for game updates
+  // Subscribe via SSE; fallback to rare polling if stream drops
   useEffect(() => {
     if (!gameId) return
 
     let isMounted = true
+    let fallbackInterval: NodeJS.Timeout | null = null
 
-    const pollGame = async () => {
-      if (!isMounted) return
-      
-      try {
-        const res = await fetch(`/api/game/${gameId}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        })
-        
-        if (!isMounted) return
-        
-        const data = await res.json()
-        if (data.game && data.game.fen) {
-          const currentFen = data.game.fen
-          const now = Date.now()
-          
-          // If we recently made an optimistic move, ignore stale server FEN during a short grace period
-          if (
-            pendingFenRef.current &&
-            now < pendingUntilRef.current &&
-            currentFen !== pendingFenRef.current &&
-            currentFen === lastFenRef.current
-          ) {
-            return
-          }
-          
-          // If server confirms our optimistic FEN, clear pending state
-          if (pendingFenRef.current && currentFen === pendingFenRef.current) {
-            pendingFenRef.current = null
-            pendingUntilRef.current = 0
-          }
-          
-          // Only update if FEN changed (opponent made a move or server state updated)
-          if (currentFen !== lastFenRef.current) {
-            const updatedGame = fenToGame(currentFen)
-            if (isMounted) {
-              setGame(updatedGame)
-              lastFenRef.current = currentFen
-              
-              // Clear selection when game state changes (opponent moved or server updated)
-              setSelectedSquare(null)
-              setValidMoves([])
-            }
-          }
-          
-          // Check if playing against self (only once)
-          if (isMounted && String(data.game.whitePlayerId) === String(data.game.blackPlayerId)) {
-            setIsPlayingAgainstSelf(true)
-          }
+    const handleServerState = (payload: any) => {
+      if (!payload) return
+      const currentFen = payload.fen
+      if (currentFen) {
+        const now = Date.now()
+        if (
+          pendingFenRef.current &&
+          now < pendingUntilRef.current &&
+          currentFen !== pendingFenRef.current &&
+          currentFen === lastFenRef.current
+        ) {
+          return
         }
-      } catch (error) {
-        if (isMounted && process.env.NODE_ENV === 'development') {
-          console.error('Error polling game:', error)
+
+        if (pendingFenRef.current && currentFen === pendingFenRef.current) {
+          pendingFenRef.current = null
+          pendingUntilRef.current = 0
+        }
+
+        if (currentFen !== lastFenRef.current) {
+          const updatedGame = fenToGame(currentFen)
+          setGame(updatedGame)
+          lastFenRef.current = currentFen
+          setSelectedSquare(null)
+          setValidMoves([])
+        }
+      }
+
+      if (payload.game && payload.game.whitePlayerId && payload.game.blackPlayerId) {
+        if (String(payload.game.whitePlayerId) === String(payload.game.blackPlayerId)) {
+          setIsPlayingAgainstSelf(true)
         }
       }
     }
 
-    // Poll every 500ms for very fast updates during active gameplay
-    const interval = setInterval(pollGame, 500)
-    pollGame() // Initial fetch
+    const attachSse = () => {
+      const es = new EventSource(`/api/game/${gameId}/stream`)
+      eventSourceRef.current = es
+
+      es.onmessage = (event) => {
+        if (!isMounted) return
+        try {
+          const payload = JSON.parse(event.data)
+          if (!payload) return
+          if (payload.type === 'gameState' || payload.type === 'move') {
+            handleServerState(payload)
+          }
+        } catch {
+          // ignore malformed
+        }
+      }
+
+      es.onerror = () => {
+        es.close()
+        eventSourceRef.current = null
+
+        if (fallbackInterval) clearInterval(fallbackInterval)
+        fallbackInterval = setInterval(async () => {
+          try {
+            const res = await fetch(`/api/game/${gameId}`, { cache: 'no-store' })
+            const data = await res.json()
+            if (data.game && data.game.fen) {
+              handleServerState({ fen: data.game.fen, game: data.game })
+            }
+          } catch {
+            // ignore
+          }
+        }, 5000)
+
+        setTimeout(() => {
+          if (isMounted && !eventSourceRef.current) {
+            if (fallbackInterval) {
+              clearInterval(fallbackInterval)
+              fallbackInterval = null
+            }
+            attachSse()
+          }
+        }, 2000)
+      }
+    }
+
+    attachSse()
 
     return () => {
       isMounted = false
-      clearInterval(interval)
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+      if (fallbackInterval) clearInterval(fallbackInterval)
     }
-  }, [gameId, playerColor])
+  }, [gameId])
 
   const isDarkSquare = (row: number, col: number) => {
     return (row + col) % 2 === 1
@@ -209,43 +235,6 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
             onMove(selectedSquare, square)
           }
           
-          // Trigger immediate poll to get server state faster
-          setTimeout(() => {
-            fetch(`/api/game/${gameId}`, {
-              cache: 'no-store',
-              headers: { 'Cache-Control': 'no-cache' }
-            })
-              .then(res => res.json())
-              .then(data => {
-                if (data.game && data.game.fen) {
-                  const currentFen = data.game.fen
-                  const now = Date.now()
-                  
-                  if (
-                    pendingFenRef.current &&
-                    now < pendingUntilRef.current &&
-                    currentFen !== pendingFenRef.current &&
-                    currentFen === lastFenRef.current
-                  ) {
-                    return
-                  }
-                  
-                  if (pendingFenRef.current && currentFen === pendingFenRef.current) {
-                    pendingFenRef.current = null
-                    pendingUntilRef.current = 0
-                  }
-
-                  if (currentFen !== lastFenRef.current) {
-                    const serverGame = fenToGame(currentFen)
-                    setGame(serverGame)
-                    lastFenRef.current = currentFen
-                    setSelectedSquare(null)
-                    setValidMoves([])
-                  }
-                }
-              })
-              .catch(() => {})
-          }, 300)
         } else {
           // Move failed, deselect
           setSelectedSquare(null)

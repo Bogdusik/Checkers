@@ -18,7 +18,7 @@ export async function GET(
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
       }
 
-      // Send initial game state
+      // Send initial game state (trimmed fields)
       try {
         const game = await prisma.game.findUnique({
           where: { id: params.id },
@@ -29,13 +29,24 @@ export async function GET(
         })
 
         if (game) {
-          send({ type: 'gameState', game, fen: game.fen })
+          send({
+            type: 'gameState',
+            game: {
+              id: game.id,
+              status: game.status,
+              whitePlayerId: game.whitePlayerId,
+              blackPlayerId: game.blackPlayerId,
+              whitePlayer: game.whitePlayer,
+              blackPlayer: game.blackPlayer,
+            },
+            fen: game.fen,
+          })
         }
       } catch (error) {
         send({ type: 'error', message: 'Failed to load game' })
       }
 
-      // Poll for updates
+      // Poll for updates (small payload)
       const interval: NodeJS.Timeout = setInterval(async () => {
         try {
           const game = await prisma.game.findUnique({
