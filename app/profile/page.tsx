@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Trophy, TrendingUp, Calendar, LogOut, ArrowLeft, Shield } from 'lucide-react'
+import { Trophy, TrendingUp, Calendar, LogOut, ArrowLeft, Shield, UserPlus, Check, X, Gamepad2, CircleDot } from 'lucide-react'
 import PlayerSelector from '@/components/PlayerSelector'
 
 export default function ProfilePage() {
@@ -12,6 +12,10 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
+  const [friendsData, setFriendsData] = useState<any>({ friends: [], incoming: [], outgoing: [] })
+  const [addTarget, setAddTarget] = useState('')
+  const [friendsLoading, setFriendsLoading] = useState(false)
+  const [friendsError, setFriendsError] = useState('')
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -28,6 +32,70 @@ export default function ProfilePage() {
         router.push('/login')
       })
   }, [router])
+
+  const loadFriends = async () => {
+    setFriendsLoading(true)
+    setFriendsError('')
+    try {
+      const res = await fetch('/api/friends', { cache: 'no-store' })
+      const data = await res.json()
+      if (res.ok) {
+        setFriendsData(data)
+      } else {
+        setFriendsError(data.error || 'Не удалось загрузить друзей')
+      }
+    } catch (e) {
+      setFriendsError('Не удалось загрузить друзей')
+    } finally {
+      setFriendsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (user) {
+      loadFriends()
+    }
+  }, [user])
+
+  const submitFriendRequest = async () => {
+    if (!addTarget.trim()) return
+    setFriendsError('')
+    try {
+      const res = await fetch('/api/friends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: addTarget.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setFriendsError(data.error || 'Ошибка отправки заявки')
+      } else {
+        setAddTarget('')
+        loadFriends()
+      }
+    } catch (e) {
+      setFriendsError('Ошибка отправки заявки')
+    }
+  }
+
+  const respondRequest = async (requestId: string, action: 'accept' | 'decline') => {
+    setFriendsError('')
+    try {
+      const res = await fetch('/api/friends/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId, action }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setFriendsError(data.error || 'Ошибка обработки заявки')
+      } else {
+        loadFriends()
+      }
+    } catch (e) {
+      setFriendsError('Ошибка обработки заявки')
+    }
+  }
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -162,6 +230,124 @@ export default function ProfilePage() {
               </div>
             </motion.div>
           </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 bg-black/20 rounded-xl p-4 sm:p-6"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-blue-400" />
+                <h3 className="text-lg sm:text-xl font-semibold text-white">Друзья и заявки</h3>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={addTarget}
+                  onChange={(e) => setAddTarget(e.target.value)}
+                  placeholder="Email или username"
+                  className="px-3 py-2 rounded-lg bg-black/30 text-white text-sm border border-gray-700 focus:border-blue-500 focus:outline-none"
+                />
+                <button
+                  onClick={submitFriendRequest}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-purple-600 transition-all"
+                >
+                  Добавить
+                </button>
+              </div>
+            </div>
+
+            {friendsError && (
+              <div className="mb-3 text-sm text-red-400">{friendsError}</div>
+            )}
+
+            <div className="grid lg:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-gray-300 text-sm">
+                  <Gamepad2 className="w-4 h-4" />
+                  <span>Друзья</span>
+                  <span className="text-gray-500">({friendsData.friends?.length || 0})</span>
+                </div>
+                <div className="space-y-2">
+                  {friendsLoading && <div className="text-gray-400 text-sm">Загрузка...</div>}
+                  {!friendsLoading && (friendsData.friends?.length || 0) === 0 && (
+                    <div className="text-gray-400 text-sm">Пока нет друзей.</div>
+                  )}
+                  {(friendsData.friends || []).map((f: any) => (
+                    <div key={f.id} className="flex items-center justify-between p-3 rounded-lg bg-black/30 border border-gray-800">
+                      <div>
+                        <div className="text-white font-semibold text-sm">{f.user.username}</div>
+                        <div className="text-gray-400 text-xs">{f.user.email}</div>
+                        <div className="text-gray-400 text-xs mt-1">
+                          {f.inGame ? (
+                            <span className="text-blue-400 flex items-center gap-1">
+                              <CircleDot className="w-3 h-3" /> В игре
+                            </span>
+                          ) : f.isOnline ? (
+                            <span className="text-green-400 flex items-center gap-1">
+                              <CircleDot className="w-3 h-3" /> Онлайн
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">
+                              Был: {f.user.lastLoginAt ? new Date(f.user.lastLoginAt).toLocaleString('ru-RU') : 'давно'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-gray-300 text-sm">
+                  <UserPlus className="w-4 h-4" />
+                  <span>Заявки</span>
+                  <span className="text-gray-500">({(friendsData.incoming?.length || 0) + (friendsData.outgoing?.length || 0)})</span>
+                </div>
+                <div className="space-y-2">
+                  {friendsLoading && <div className="text-gray-400 text-sm">Загрузка...</div>}
+                  {!friendsLoading && (friendsData.incoming?.length || 0) + (friendsData.outgoing?.length || 0) === 0 && (
+                    <div className="text-gray-400 text-sm">Нет входящих/исходящих заявок.</div>
+                  )}
+                  {(friendsData.incoming || []).map((req: any) => (
+                    <div key={req.id} className="flex items-center justify-between p-3 rounded-lg bg-black/30 border border-gray-800">
+                      <div>
+                        <div className="text-white font-semibold text-sm">{req.user.username}</div>
+                        <div className="text-gray-400 text-xs">{req.user.email}</div>
+                        <div className="text-gray-500 text-xs mt-1">Входящая заявка</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => respondRequest(req.id, 'accept')}
+                          className="p-2 rounded-lg bg-green-600 hover:bg-green-700 text-white"
+                          title="Принять"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => respondRequest(req.id, 'decline')}
+                          className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white"
+                          title="Отклонить"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {(friendsData.outgoing || []).map((req: any) => (
+                    <div key={req.id} className="flex items-center justify-between p-3 rounded-lg bg-black/30 border border-gray-800">
+                      <div>
+                        <div className="text-white font-semibold text-sm">{req.user.username}</div>
+                        <div className="text-gray-400 text-xs">{req.user.email}</div>
+                        <div className="text-gray-500 text-xs mt-1">Исходящая заявка</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
           <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
