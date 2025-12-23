@@ -47,12 +47,18 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
   const [isPlayingAgainstSelf, setIsPlayingAgainstSelf] = useState(false)
   const [squareSize, setSquareSize] = useState(70)
   const lastFenRef = useRef<string>(initialFen || '')
+  // Protect against visual "bounce back" when server responds a tick later with stale FEN
+  const pendingFenRef = useRef<string | null>(null)
+  const pendingUntilRef = useRef<number>(0)
 
   useEffect(() => {
     if (initialFen && initialFen !== lastFenRef.current) {
       const updatedGame = fenToGame(initialFen)
       setGame(updatedGame)
       lastFenRef.current = initialFen
+      // Reset any pending optimistic state when server pushes a newer FEN
+      pendingFenRef.current = null
+      pendingUntilRef.current = 0
       // Clear selection when game state changes from parent
       setSelectedSquare(null)
       setValidMoves([])
@@ -91,6 +97,23 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
         const data = await res.json()
         if (data.game && data.game.fen) {
           const currentFen = data.game.fen
+          const now = Date.now()
+          
+          // If we recently made an optimistic move, ignore stale server FEN during a short grace period
+          if (
+            pendingFenRef.current &&
+            now < pendingUntilRef.current &&
+            currentFen !== pendingFenRef.current &&
+            currentFen === lastFenRef.current
+          ) {
+            return
+          }
+          
+          // If server confirms our optimistic FEN, clear pending state
+          if (pendingFenRef.current && currentFen === pendingFenRef.current) {
+            pendingFenRef.current = null
+            pendingUntilRef.current = 0
+          }
           
           // Only update if FEN changed (opponent made a move or server state updated)
           if (currentFen !== lastFenRef.current) {
@@ -172,8 +195,10 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
       if (validMoves.includes(square)) {
         const result = makeMove(game, selectedSquare, square)
         if (result.success) {
-          // Optimistically update local state
+          // Optimistically update local state and mark pending to avoid bounce back
           const newFen = gameToFen(result.newGame)
+          pendingFenRef.current = newFen
+          pendingUntilRef.current = Date.now() + 1500 // 1.5s grace window
           setGame(result.newGame)
           lastFenRef.current = newFen // Update ref immediately
           setSelectedSquare(null)
@@ -192,12 +217,31 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
             })
               .then(res => res.json())
               .then(data => {
-                if (data.game && data.game.fen && data.game.fen !== lastFenRef.current) {
-                  const serverGame = fenToGame(data.game.fen)
-                  setGame(serverGame)
-                  lastFenRef.current = data.game.fen
-                  setSelectedSquare(null)
-                  setValidMoves([])
+                if (data.game && data.game.fen) {
+                  const currentFen = data.game.fen
+                  const now = Date.now()
+                  
+                  if (
+                    pendingFenRef.current &&
+                    now < pendingUntilRef.current &&
+                    currentFen !== pendingFenRef.current &&
+                    currentFen === lastFenRef.current
+                  ) {
+                    return
+                  }
+                  
+                  if (pendingFenRef.current && currentFen === pendingFenRef.current) {
+                    pendingFenRef.current = null
+                    pendingUntilRef.current = 0
+                  }
+
+                  if (currentFen !== lastFenRef.current) {
+                    const serverGame = fenToGame(currentFen)
+                    setGame(serverGame)
+                    lastFenRef.current = currentFen
+                    setSelectedSquare(null)
+                    setValidMoves([])
+                  }
                 }
               })
               .catch(() => {})
