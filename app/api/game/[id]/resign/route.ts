@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { updateRatings } from '@/lib/rating'
+import { ensureUserStatistics } from '@/lib/statistics'
 import { GameStatus } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
@@ -85,58 +86,40 @@ export async function POST(
     const isPlayingAgainstSelf = String(game.whitePlayerId) === String(game.blackPlayerId)
 
     if (!isPlayingAgainstSelf) {
-      // Get both players' stats for rating calculation
-      const winnerStats = await prisma.userStatistics.findUnique({
-        where: { userId: winnerId }
-      })
-
-      const loserStats = await prisma.userStatistics.findUnique({
-        where: { userId: user.id }
-      })
+      // Get both players' stats for rating calculation (ensure they exist)
+      const winnerStats = await ensureUserStatistics(winnerId)
+      const loserStats = await ensureUserStatistics(user.id)
 
       // Calculate new ratings
-      let newWinnerRating = winnerStats?.rating || 1000
-      let newLoserRating = loserStats?.rating || 1000
-
-      if (winnerStats && loserStats) {
-        const result = gameStatus === 'WHITE_WON' ? 'white_won' : 'black_won'
-        const ratings = updateRatings(
-          gameStatus === 'WHITE_WON' ? winnerStats.rating : loserStats.rating,
-          gameStatus === 'WHITE_WON' ? loserStats.rating : winnerStats.rating,
-          result
-        )
-        if (gameStatus === 'WHITE_WON') {
-          newWinnerRating = ratings.newWhiteRating
-          newLoserRating = ratings.newBlackRating
-        } else {
-          newWinnerRating = ratings.newBlackRating
-          newLoserRating = ratings.newWhiteRating
-        }
-      }
+      const result = gameStatus === 'WHITE_WON' ? 'white_won' : 'black_won'
+      const ratings = updateRatings(
+        gameStatus === 'WHITE_WON' ? winnerStats.rating : loserStats.rating,
+        gameStatus === 'WHITE_WON' ? loserStats.rating : winnerStats.rating,
+        result
+      )
+      
+      const newWinnerRating = gameStatus === 'WHITE_WON' ? ratings.newWhiteRating : ratings.newBlackRating
+      const newLoserRating = gameStatus === 'WHITE_WON' ? ratings.newBlackRating : ratings.newWhiteRating
 
       // Update winner stats
-      if (winnerStats) {
-        await prisma.userStatistics.update({
-          where: { userId: winnerId },
-          data: {
-            totalGames: winnerStats.totalGames + 1,
-            wins: winnerStats.wins + 1,
-            rating: newWinnerRating
-          }
-        })
-      }
+      await prisma.userStatistics.update({
+        where: { userId: winnerId },
+        data: {
+          totalGames: winnerStats.totalGames + 1,
+          wins: winnerStats.wins + 1,
+          rating: newWinnerRating
+        }
+      })
 
       // Update loser stats
-      if (loserStats) {
-        await prisma.userStatistics.update({
-          where: { userId: user.id },
-          data: {
-            totalGames: loserStats.totalGames + 1,
-            losses: loserStats.losses + 1,
-            rating: newLoserRating
-          }
-        })
-      }
+      await prisma.userStatistics.update({
+        where: { userId: user.id },
+        data: {
+          totalGames: loserStats.totalGames + 1,
+          losses: loserStats.losses + 1,
+          rating: newLoserRating
+        }
+      })
     }
 
     return NextResponse.json({

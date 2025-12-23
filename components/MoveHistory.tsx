@@ -24,14 +24,14 @@ export default function MoveHistory({ moves, currentPlayer }: MoveHistoryProps) 
     return `${from} → ${to}`
   }
 
-  const groupedMoves = moves.reduce((acc, move, index) => {
+  const groupedMoves = moves.reduce((acc: Move[][], move, index) => {
     const pairIndex = Math.floor(index / 2)
     if (!acc[pairIndex]) {
       acc[pairIndex] = []
     }
     acc[pairIndex].push(move)
     return acc
-  }, [] as Move[][])
+  }, [])
 
   return (
     <motion.div
@@ -71,8 +71,8 @@ export default function MoveHistory({ moves, currentPlayer }: MoveHistoryProps) 
                   {pair.map((move, moveIndex) => {
                     const isWhiteMove = moveIndex === 0
                     const isCurrentMove = pairIndex === groupedMoves.length - 1 && 
-                                       ((isWhiteMove && currentPlayer === 'white') || 
-                                        (!isWhiteMove && currentPlayer === 'black'))
+                                       ((isWhiteMove && currentPlayer === 'white' && pair.length === 1) || 
+                                        (!isWhiteMove && currentPlayer === 'black' && pair.length === 2))
                     
                     return (
                       <div

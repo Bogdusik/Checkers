@@ -53,6 +53,7 @@ export default function GameChat({ gameId, currentUserId }: GameChatProps) {
     const interval = setInterval(fetchMessages, 2000)
 
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameId])
 
   const handleSend = async (e: React.FormEvent) => {
