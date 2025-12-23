@@ -140,12 +140,13 @@ export function getValidMoves(game: CheckersGame, square: Square): Square[] {
   // If there are any mandatory captures for this player, only allow captures
   const hasAnyCaptures = hasMandatoryCaptures(game)
   if (hasAnyCaptures) {
+    // If this piece has captures, return only captures
+    // If this piece doesn't have captures, return empty (can't move this piece when captures are mandatory)
     return captures
   }
   
-  if (captures.length > 0) {
-    return captures
-  }
+  // If no mandatory captures exist, allow both regular moves and captures for this piece
+  // Add captures to moves if they exist, but also allow regular moves
   
   // Regular moves
   // White pieces are at bottom (rows 1,2,3) and move UP (increasing row: 1->2->3->4...)
@@ -194,6 +195,14 @@ export function getValidMoves(game: CheckersGame, square: Square): Square[] {
           }
         }
       }
+    }
+  })
+  
+  // If there are no mandatory captures, include both regular moves and captures
+  // Add captures to the moves array
+  captures.forEach(capture => {
+    if (!moves.includes(capture)) {
+      moves.push(capture)
     }
   })
   
