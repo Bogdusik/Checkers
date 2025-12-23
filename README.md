@@ -1,113 +1,112 @@
 # Online Checkers Game
 
-Онлайн игра в шашки с возможностью игры против других зарегистрированных игроков или против себя.
+Online checkers game with the ability to play against other registered players or against yourself.
 
-## Возможности
+## Features
 
-- ✅ Регистрация и авторизация пользователей
-- ✅ Игра против других зарегистрированных игроков
-- ✅ Игра против себя (для тренировки)
-- ✅ Автоматический поиск соперника (лобби)
-- ✅ Статистика игр (победы, поражения, ничьи)
-- ✅ Админ панель для просмотра всех игроков
-- ✅ Реальное время обновление игры (polling)
-- ✅ Полная логика шашек (обычные шашки и дамки)
+- ✅ User registration and authentication
+- ✅ Play against other registered players
+- ✅ Play against yourself (for practice)
+- ✅ Automatic opponent search (lobby)
+- ✅ Game statistics (wins, losses, draws)
+- ✅ Admin panel for viewing all players
+- ✅ Real-time game updates (polling)
+- ✅ Full checkers logic (regular pieces and kings)
 
-## Технологии
+## Technologies
 
-- **Next.js 14** - React фреймворк
-- **TypeScript** - типизация
-- **Prisma** - ORM для работы с базой данных
-- **PostgreSQL** - база данных
-- **Tailwind CSS** - стилизация
-- **Framer Motion** - анимации
-- **JWT** - аутентификация
+- **Next.js 14** - React framework
+- **TypeScript** - type safety
+- **Prisma** - ORM for database operations
+- **PostgreSQL** - database
+- **Tailwind CSS** - styling
+- **Framer Motion** - animations
+- **JWT** - authentication
 
-## Установка
+## Installation
 
-1. Клонируйте репозиторий
-2. Установите зависимости:
+1. Clone the repository
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Настройте переменные окружения (создайте `.env`):
+3. Configure environment variables (create `.env`):
 ```
 DATABASE_URL=postgresql://user:password@localhost:5432/checkers_db
 JWT_SECRET=your-secret-key-minimum-32-characters
 ```
 
-4. Настройте базу данных:
+4. Set up the database:
 ```bash
 npx prisma generate
 npx prisma db push
 ```
 
-5. Запустите сервер разработки:
+5. Start the development server:
 ```bash
 npm run dev
 ```
 
-## Деплой на Vercel
+## Deployment on Vercel
 
-Подробная инструкция в файле [DEPLOY.md](./DEPLOY.md)
+Detailed instructions in [DEPLOY.md](./DEPLOY.md)
 
-### Быстрый старт:
+### Quick start:
 
-1. Загрузите код в GitHub
-2. Подключите репозиторий к Vercel
-3. Добавьте переменные окружения:
-   - `DATABASE_URL` - URL вашей PostgreSQL базы данных
-   - `JWT_SECRET` - случайный секретный ключ (минимум 32 символа)
-4. Деплой автоматически выполнит миграции
+1. Push code to GitHub
+2. Connect repository to Vercel
+3. Add environment variables:
+   - `DATABASE_URL` - Your PostgreSQL database URL
+   - `JWT_SECRET` - Random secret key (minimum 32 characters)
+4. Deployment will automatically run migrations
 
-## Игра против других игроков
+## Playing Against Other Players
 
-### Как это работает:
+### How it works:
 
-1. **Регистрация:** Каждый игрок регистрируется на сайте
-2. **Выбор соперника:** 
-   - Нажмите "Найти игру"
-   - Выберите "Играть против себя" или выберите игрока из списка
-3. **Игра:** Оба игрока видят доску и могут делать ходы
-4. **Обновления:** Игра обновляется каждые 2 секунды
+1. **Registration:** Each player registers on the site
+2. **Opponent Selection:** 
+   - Click "Find Game"
+   - Choose "Play Against Yourself" or select a player from the list
+3. **Game:** Both players see the board and can make moves
+4. **Updates:** Game updates every 2 seconds
 
-### Автоматический поиск:
+### Automatic Search:
 
-- Используйте функцию лобби для автоматического поиска соперника
-- Система найдет ожидающего игрока или создаст новую игру
+- Use the lobby function for automatic opponent search
+- The system will find a waiting player or create a new game
 
-## Админ панель
+## Admin Panel
 
-Email `bogdyn13@gmail.com` автоматически получает права администратора.
+Email `bogdyn13@gmail.com` automatically receives administrator privileges.
 
-Админ может:
-- Просматривать всех игроков
-- Видеть статистику каждого игрока
-- Видеть последний вход игрока
+Admin can:
+- View all players
+- See statistics for each player
+- See player's last login
 
-## Структура проекта
+## Project Structure
 
 ```
 ├── app/                    # Next.js App Router
 │   ├── api/               # API routes
-│   ├── admin/             # Админ панель
-│   ├── game/              # Страница игры
-│   ├── login/             # Страница входа
-│   ├── register/          # Страница регистрации
-│   └── profile/           # Профиль пользователя
-├── components/            # React компоненты
-│   ├── CheckersBoard.tsx  # Доска для шашек
-│   └── PlayerSelector.tsx  # Выбор соперника
-├── lib/                   # Утилиты
-│   ├── auth.ts            # JWT аутентификация
-│   ├── checkers.ts        # Логика игры в шашки
-│   └── prisma.ts          # Prisma клиент
-└── prisma/                # Prisma схема
-    └── schema.prisma      # Схема базы данных
+│   ├── admin/             # Admin panel
+│   ├── game/              # Game page
+│   ├── login/             # Login page
+│   ├── register/          # Registration page
+│   └── profile/           # User profile
+├── components/            # React components
+│   ├── CheckersBoard.tsx  # Checkers board
+│   └── PlayerSelector.tsx  # Opponent selector
+├── lib/                   # Utilities
+│   ├── auth.ts            # JWT authentication
+│   ├── checkers.ts        # Checkers game logic
+│   └── prisma.ts          # Prisma client
+└── prisma/                # Prisma schema
+    └── schema.prisma      # Database schema
 ```
 
-## Лицензия
+## License
 
 MIT
-
