@@ -9,6 +9,7 @@ interface CheckersBoardProps {
   playerColor: 'white' | 'black'
   onMove?: (from: string, to: string) => void
   initialFen?: string
+  lastMove?: { from: string; to: string } | null
 }
 
 const BOARD_SIZE = 8
@@ -38,7 +39,7 @@ const getSquareSize = () => {
   return Math.min(70, maxSquareSize)
 }
 
-export default function CheckersBoard({ gameId, playerColor, onMove, initialFen }: CheckersBoardProps) {
+export default function CheckersBoard({ gameId, playerColor, onMove, initialFen, lastMove }: CheckersBoardProps) {
   const [game, setGame] = useState<CheckersGame>(() => 
     initialFen ? fenToGame(initialFen) : createNewGame()
   )
@@ -370,6 +371,9 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
                 const piece = game.board.get(square)
                 const isValidMove = memoizedValidMoves.includes(square)
                 const isSelected = selectedSquare === square
+                const isLastMoveFrom = lastMove?.from === square
+                const isLastMoveTo = lastMove?.to === square
+                const isLastMove = isLastMoveFrom || isLastMoveTo
 
                 return (
                   <div
@@ -390,6 +394,8 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
                       isValidMove ? 'ring-2 ring-blue-400 ring-opacity-75' : ''
                     } ${
                       isSelected ? 'ring-4 ring-yellow-400' : ''
+                    } ${
+                      isLastMove ? 'ring-2 ring-green-400 ring-opacity-90' : ''
                     } transition-all cursor-pointer hover:opacity-90 active:opacity-75`}
                     style={{
                       left: col * squareSize,

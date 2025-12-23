@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Trophy, TrendingUp, Calendar, LogOut, ArrowLeft, Shield, UserPlus, Check, X, Gamepad2, CircleDot } from 'lucide-react'
+import { Trophy, TrendingUp, Calendar, LogOut, ArrowLeft, Shield, UserPlus, Check, X, Gamepad2, CircleDot, Settings } from 'lucide-react'
 import PlayerSelector from '@/components/PlayerSelector'
+import ThemeSettings from '@/components/ThemeSettings'
+import { toastManager } from '@/components/Toast'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -190,11 +192,33 @@ export default function ProfilePage() {
                   <span className="text-gray-400">Ничьих:</span>
                   <span className="text-yellow-400 font-semibold">{user.statistics?.draws || 0}</span>
                 </div>
-                <div className="pt-2 sm:pt-3 border-t border-gray-700">
+                <div className="pt-2 sm:pt-3 border-t border-gray-700 space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Процент побед:</span>
                     <span className="text-blue-400 font-bold text-base sm:text-lg">{winRate}%</span>
                   </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Рейтинг (ELO):</span>
+                    <span className="text-purple-400 font-bold text-base sm:text-lg">{user.statistics?.rating || 1000}</span>
+                  </div>
+                  {user.statistics && user.statistics.totalGames > 0 && (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Среднее время игры:</span>
+                        <span className="text-white font-semibold text-sm">
+                          {user.statistics.averageGameTime 
+                            ? `${Math.floor(user.statistics.averageGameTime / 60)} мин ${user.statistics.averageGameTime % 60} сек`
+                            : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400">Среднее ходов за игру:</span>
+                        <span className="text-white font-semibold text-sm">
+                          {Math.round((user.statistics.totalMoves || 0) / user.statistics.totalGames)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -356,6 +380,13 @@ export default function ProfilePage() {
             >
               Найти игру
             </button>
+            <Link
+              href="/history"
+              className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 glass-dark text-white rounded-lg hover:bg-opacity-50 transition-all text-sm sm:text-base text-center"
+            >
+              <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
+              История игр
+            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center justify-center gap-2 px-4 sm:px-6 py-3 glass-dark text-white rounded-lg hover:bg-opacity-50 transition-all text-sm sm:text-base"
@@ -380,11 +411,11 @@ export default function ProfilePage() {
               if (data.game) {
                 router.push(`/game?id=${data.game.id}`)
               } else {
-                alert('Ошибка создания игры')
+                toastManager.error(data.error || 'Ошибка создания игры')
               }
             } catch (error) {
               if (process.env.NODE_ENV === 'development') console.error('Error creating game:', error)
-              alert('Ошибка создания игры')
+              toastManager.error('Ошибка создания игры')
             }
           }}
           currentUserId={user?.id || ''}
