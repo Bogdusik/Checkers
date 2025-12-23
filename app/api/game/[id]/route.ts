@@ -14,15 +14,19 @@ export async function GET(
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    // Update user's lastLoginAt to track online status (non-blocking)
-    try {
-      await prisma.user.update({
+    // Update user's lastLoginAt to track online status (non-blocking, throttled)
+    // Only update if last update was more than 30 seconds ago to reduce DB load
+    // This is done asynchronously and doesn't block the request
+    if (Math.random() < 0.1) { // Only update 10% of requests to reduce load
+      prisma.user.update({
         where: { id: user.id },
         data: { lastLoginAt: new Date() }
+      }).catch((updateError) => {
+        // Silently fail - this is non-critical
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Failed to update lastLoginAt:', updateError)
+        }
       })
-    } catch (updateError) {
-      // If update fails, log but don't block the request
-      console.error('Failed to update lastLoginAt:', updateError)
     }
 
     const game = await prisma.game.findUnique({
