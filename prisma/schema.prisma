@@ -106,6 +106,28 @@ model GameInvite {
   @@index([toUserId, status])
 }
 
+model Friend {
+  id            String        @id @default(cuid())
+  requesterId   String
+  addresseeId   String
+  requester     User          @relation("RequestedFriends", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee     User          @relation("ReceivedFriends", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status        FriendStatus  @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  acceptedAt    DateTime?
+
+  @@index([requesterId, status])
+  @@index([addresseeId, status])
+  @@unique([requesterId, addresseeId])
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
 enum InviteStatus {
   PENDING
   ACCEPTED
