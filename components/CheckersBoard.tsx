@@ -13,29 +13,29 @@ interface CheckersBoardProps {
 
 const BOARD_SIZE = 8
 
-// Responsive label size
 const getLabelSize = (squareSize: number) => {
-  if (squareSize < 35) return 18 // Very small screens
-  if (squareSize < 45) return 20 // Small screens
-  return 25 // Normal screens
+  if (squareSize < 35) return 16
+  if (squareSize < 45) return 18
+  return 22
 }
 
 // Responsive square size based on screen width
 const getSquareSize = () => {
   if (typeof window === 'undefined') return 70
   const width = window.innerWidth
-  // Account for padding (2rem = 32px on each side) and labels (25px * 2)
-  const availableWidth = width - 64 - 50 // padding + labels
+  const availableWidth = width - (width < 640 ? 32 : 64) - (width < 640 ? 40 : 50)
   const maxSquareSize = Math.floor(availableWidth / 8)
   
-  if (width < 640) { // Mobile (iPhone)
-    return Math.max(28, Math.min(35, maxSquareSize)) // Minimum 28px, max 35px
-  } else if (width < 768) { // Small tablets
-    return Math.min(45, maxSquareSize)
-  } else if (width < 1024) { // Tablets
-    return Math.min(55, maxSquareSize)
+  if (width < 430) { // iPhone 13 Pro - 17 Pro Max (390-430px)
+    return Math.max(32, Math.min(40, maxSquareSize))
+  } else if (width < 640) {
+    return Math.max(35, Math.min(42, maxSquareSize))
+  } else if (width < 768) {
+    return Math.min(50, maxSquareSize)
+  } else if (width < 1024) {
+    return Math.min(60, maxSquareSize)
   }
-  return Math.min(70, maxSquareSize) // Desktop
+  return Math.min(70, maxSquareSize)
 }
 
 export default function CheckersBoard({ gameId, playerColor, onMove, initialFen }: CheckersBoardProps) {
@@ -111,7 +111,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
           }
         }
       } catch (error) {
-        if (process.env.NODE_ENV === 'development' && isMounted) {
+        if (isMounted && process.env.NODE_ENV === 'development') {
           console.error('Error polling game:', error)
         }
       }
@@ -142,13 +142,8 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
 
     // Check if it's player's turn first
     if (!isPlayingAgainstSelf && game.currentPlayer !== playerColor) {
-      // Not player's turn - clear selection if any
       if (process.env.NODE_ENV === 'development') {
-        console.log('Not player turn:', {
-          currentPlayer: game.currentPlayer,
-          playerColor,
-          isPlayingAgainstSelf
-        })
+        console.log('Not player turn:', { currentPlayer: game.currentPlayer, playerColor, isPlayingAgainstSelf })
       }
       if (selectedSquare) {
         setSelectedSquare(null)
@@ -205,8 +200,8 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
                   setValidMoves([])
                 }
               })
-              .catch(() => {}) // Silently fail, polling will catch up
-          }, 300) // Small delay to ensure server processed the move
+              .catch(() => {})
+          }, 300)
         } else {
           // Move failed, deselect
           setSelectedSquare(null)
@@ -223,21 +218,17 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
   const renderPiece = (piece: { color: 'white' | 'black'; type: 'man' | 'king' }, row: number, col: number) => {
     const isSelected = selectedSquare === getSquareName(row, col)
     const isWhite = piece.color === 'white'
-    const pieceSize = Math.max(squareSize * 0.75, 20) // Piece is 75% of square, minimum 20px
+    const pieceSize = Math.max(squareSize * 0.75, 24)
     const kingSize = squareSize < 40 ? 'text-lg' : squareSize < 50 ? 'text-xl' : 'text-2xl'
     
     return (
       <motion.div
         initial={false}
-        animate={{
-          scale: isSelected ? 1.15 : 1,
-        }}
+        animate={{ scale: isSelected ? 1.15 : 1 }}
         className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
       >
         <div
-          className={`rounded-full border-3 shadow-2xl ${
-            isSelected ? 'ring-4 ring-yellow-400 ring-opacity-80' : ''
-          }`}
+          className={`rounded-full shadow-2xl ${isSelected ? 'ring-4 ring-yellow-400 ring-opacity-80' : ''}`}
           style={{
             width: `${pieceSize}px`,
             height: `${pieceSize}px`,
@@ -276,7 +267,6 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
         className="glass-dark rounded-2xl p-3 sm:p-4 lg:p-6 inline-block"
       >
         <div className="relative" style={{ width: boardWidth, height: boardHeight }}>
-          {/* Row numbers (left side) */}
           {Array.from({ length: BOARD_SIZE }, (_, row) => (
             <div
               key={`row-${row}`}
@@ -286,14 +276,12 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
                 top: labelSize + row * squareSize,
                 width: labelSize,
                 height: squareSize,
-                fontSize: squareSize < 40 ? '0.75rem' : squareSize < 50 ? '0.875rem' : '1.125rem',
+                fontSize: squareSize < 40 ? '0.7rem' : squareSize < 50 ? '0.8rem' : '1rem',
               }}
             >
               {8 - row}
             </div>
           ))}
-
-          {/* Column letters (bottom) */}
           {Array.from({ length: BOARD_SIZE }, (_, col) => (
             <div
               key={`col-${col}`}
@@ -303,7 +291,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
                 top: BOARD_SIZE * squareSize + labelSize,
                 width: squareSize,
                 height: labelSize,
-                fontSize: squareSize < 40 ? '0.75rem' : squareSize < 50 ? '0.875rem' : '1.125rem',
+                fontSize: squareSize < 40 ? '0.7rem' : squareSize < 50 ? '0.8rem' : '1rem',
               }}
             >
               {String.fromCharCode(104 - col)}
@@ -360,14 +348,14 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen 
                   >
                     {piece && renderPiece(piece, row, col)}
                     {isValidMove && !piece && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 10 }}>
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                         <div 
                           className="rounded-full bg-blue-500 opacity-70"
                           style={{
-                            width: `${Math.max(squareSize * 0.2, 8)}px`,
-                            height: `${Math.max(squareSize * 0.2, 8)}px`,
+                            width: `${Math.max(squareSize * 0.2, 10)}px`,
+                            height: `${Math.max(squareSize * 0.2, 10)}px`,
                           }}
-                        ></div>
+                        />
                       </div>
                     )}
                   </div>

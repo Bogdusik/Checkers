@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Users, Trophy, TrendingDown, Calendar, Mail, Shield, ArrowLeft } from 'lucide-react'
+import { formatDate, isActiveUser, isToday } from '@/lib/utils'
 
 export default function AdminPage() {
   const router = useRouter()
@@ -40,10 +41,6 @@ export default function AdminPage() {
     }
   }
 
-  const formatDate = (date: string | null) => {
-    if (!date) return 'Никогда'
-    return new Date(date).toLocaleString('ru-RU')
-  }
 
   if (loading) {
     return (
@@ -127,7 +124,7 @@ export default function AdminPage() {
               <span className="text-gray-400 text-xs sm:text-sm">Активных</span>
             </div>
             <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
-              {users.filter((u: any) => u.lastLoginAt && new Date(u.lastLoginAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}
+              {users.filter((u: any) => isActiveUser(u.lastLoginAt, 7)).length}
             </p>
           </motion.div>
 
@@ -142,12 +139,7 @@ export default function AdminPage() {
               <span className="text-gray-400 text-xs sm:text-sm">Сегодня</span>
             </div>
             <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
-              {users.filter((u: any) => {
-                if (!u.lastLoginAt) return false
-                const today = new Date()
-                const loginDate = new Date(u.lastLoginAt)
-                return loginDate.toDateString() === today.toDateString()
-              }).length}
+              {users.filter((u: any) => isToday(u.lastLoginAt)).length}
             </p>
           </motion.div>
         </div>

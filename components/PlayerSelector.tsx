@@ -45,7 +45,7 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
       }
       setLoading(false)
     } catch (error) {
-      console.error('Error fetching players:', error)
+      if (process.env.NODE_ENV === 'development') console.error('Error fetching players:', error)
       setLoading(false)
     }
   }
@@ -71,9 +71,7 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
         alert(data.error || 'Ошибка отправки приглашения')
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error sending invite:', error)
-      }
+      if (process.env.NODE_ENV === 'development') console.error('Error sending invite:', error)
       alert('Ошибка отправки приглашения')
     }
   }

@@ -70,12 +70,12 @@ export default function Home() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
             Online Checkers
           </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-300 px-4">
+          <p className="text-sm sm:text-base lg:text-lg text-gray-300 px-4">
             Играйте в шашки онлайн с друзьями
           </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 sm:mb-12">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -83,8 +83,8 @@ export default function Home() {
             className="glass-dark rounded-2xl p-4 sm:p-6 hover:glow-hover transition-all"
           >
             <Gamepad2 className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-blue-400 mb-3 sm:mb-4" />
-            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">Онлайн игра</h3>
-            <p className="text-gray-400 text-sm sm:text-base">Играйте в шашки в реальном времени с друзьями</p>
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-2">Онлайн игра</h3>
+            <p className="text-gray-400 text-xs sm:text-sm">Играйте в шашки в реальном времени с друзьями</p>
           </motion.div>
 
           <motion.div
@@ -94,8 +94,8 @@ export default function Home() {
             className="glass-dark rounded-2xl p-4 sm:p-6 hover:glow-hover transition-all"
           >
             <Trophy className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-yellow-400 mb-3 sm:mb-4" />
-            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">Статистика</h3>
-            <p className="text-gray-400 text-sm sm:text-base">Отслеживайте свой прогресс и рейтинг</p>
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-2">Статистика</h3>
+            <p className="text-gray-400 text-xs sm:text-sm">Отслеживайте свой прогресс и рейтинг</p>
           </motion.div>
 
           <motion.div
@@ -105,8 +105,8 @@ export default function Home() {
             className="glass-dark rounded-2xl p-4 sm:p-6 hover:glow-hover transition-all sm:col-span-2 lg:col-span-1"
           >
             <TrendingUp className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-green-400 mb-3 sm:mb-4" />
-            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">Развитие</h3>
-            <p className="text-gray-400 text-sm sm:text-base">Улучшайте свои навыки с каждой игрой</p>
+            <h3 className="text-base sm:text-lg font-semibold text-white mb-2">Развитие</h3>
+            <p className="text-gray-400 text-xs sm:text-sm">Улучшайте свои навыки с каждой игрой</p>
           </motion.div>
         </div>
 
@@ -120,20 +120,20 @@ export default function Home() {
             <>
               <button
                 onClick={() => setShowPlayerSelector(true)}
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg glow text-sm sm:text-base"
+                className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg glow text-sm"
               >
                 Найти игру
               </button>
               <Link
                 href="/profile"
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 glass-dark text-white font-semibold rounded-xl hover:bg-opacity-50 transition-all transform hover:scale-105 text-center text-sm sm:text-base"
+                className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 glass-dark text-white font-semibold rounded-xl hover:bg-opacity-50 transition-all transform hover:scale-105 text-center text-sm"
               >
                 Мой профиль
               </Link>
               {user.isAdmin && (
                 <Link
                   href="/admin"
-                  className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold rounded-xl hover:from-red-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg text-sm sm:text-base"
+                  className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold rounded-xl hover:from-red-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg text-sm"
                 >
                   Админ панель
                 </Link>
@@ -143,13 +143,13 @@ export default function Home() {
             <>
               <Link
                 href="/login"
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg glow text-sm sm:text-base text-center"
+                className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 shadow-lg glow text-sm text-center"
               >
                 Войти
               </Link>
               <Link
                 href="/register"
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 glass-dark text-white font-semibold rounded-xl hover:bg-opacity-50 transition-all transform hover:scale-105 text-center text-sm sm:text-base"
+                className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 glass-dark text-white font-semibold rounded-xl hover:bg-opacity-50 transition-all transform hover:scale-105 text-center text-sm"
               >
                 Регистрация
               </Link>
@@ -174,7 +174,7 @@ export default function Home() {
                 alert('Ошибка создания игры')
               }
             } catch (error) {
-              console.error('Error creating game:', error)
+              if (process.env.NODE_ENV === 'development') console.error('Error creating game:', error)
               alert('Ошибка создания игры')
             }
           }}
