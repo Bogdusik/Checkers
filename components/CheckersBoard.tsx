@@ -206,6 +206,24 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
   const getSquareName = (row: number, col: number): Square => {
     return (String.fromCharCode(97 + col) + (8 - row)) as Square
   }
+  
+  // Get display coordinates (flipped for black player)
+  const getDisplayCoords = (row: number, col: number) => {
+    if (playerColor === 'black') {
+      return { row: 7 - row, col: 7 - col }
+    }
+    return { row, col }
+  }
+  
+  // Get actual square name from display coordinates
+  const getSquareFromDisplay = (displayRow: number, displayCol: number): Square => {
+    if (playerColor === 'black') {
+      const actualRow = 7 - displayRow
+      const actualCol = 7 - displayCol
+      return (String.fromCharCode(97 + actualCol) + (8 - actualRow)) as Square
+    }
+    return (String.fromCharCode(97 + displayCol) + (8 - displayRow)) as Square
+  }
 
   const handleSquareClick = (square: Square) => {
     if (game.gameOver) {
@@ -323,36 +341,44 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
         className="glass-dark rounded-2xl p-3 sm:p-4 lg:p-6 inline-block"
       >
         <div className="relative" style={{ width: boardWidth, height: boardHeight }}>
-          {Array.from({ length: BOARD_SIZE }, (_, row) => (
-            <div
-              key={`row-${row}`}
-              className="absolute flex items-center justify-center text-white font-semibold"
-              style={{
-                left: 0,
-                top: labelSize + row * squareSize,
-                width: labelSize,
-                height: squareSize,
-                fontSize: squareSize < 40 ? '0.7rem' : squareSize < 50 ? '0.8rem' : '1rem',
-              }}
-            >
-              {8 - row}
-            </div>
-          ))}
-          {Array.from({ length: BOARD_SIZE }, (_, col) => (
-            <div
-              key={`col-${col}`}
-              className="absolute flex items-center justify-center text-white font-semibold"
-              style={{
-                left: labelSize + col * squareSize,
-                top: BOARD_SIZE * squareSize + labelSize,
-                width: squareSize,
-                height: labelSize,
-                fontSize: squareSize < 40 ? '0.7rem' : squareSize < 50 ? '0.8rem' : '1rem',
-              }}
-            >
-              {String.fromCharCode(104 - col)}
-            </div>
-          ))}
+          {Array.from({ length: BOARD_SIZE }, (_, row) => {
+            const displayRow = playerColor === 'black' ? row + 1 : 8 - row
+            return (
+              <div
+                key={`row-${row}`}
+                className="absolute flex items-center justify-center text-white font-semibold"
+                style={{
+                  left: 0,
+                  top: labelSize + row * squareSize,
+                  width: labelSize,
+                  height: squareSize,
+                  fontSize: squareSize < 40 ? '0.7rem' : squareSize < 50 ? '0.8rem' : '1rem',
+                }}
+              >
+                {displayRow}
+              </div>
+            )
+          })}
+          {Array.from({ length: BOARD_SIZE }, (_, col) => {
+            const displayCol = playerColor === 'black' 
+              ? String.fromCharCode(97 + (7 - col))
+              : String.fromCharCode(104 - col)
+            return (
+              <div
+                key={`col-${col}`}
+                className="absolute flex items-center justify-center text-white font-semibold"
+                style={{
+                  left: labelSize + col * squareSize,
+                  top: BOARD_SIZE * squareSize + labelSize,
+                  width: squareSize,
+                  height: labelSize,
+                  fontSize: squareSize < 40 ? '0.7rem' : squareSize < 50 ? '0.8rem' : '1rem',
+                }}
+              >
+                {displayCol}
+              </div>
+            )
+          })}
 
           {/* Board squares */}
           <div
@@ -364,10 +390,14 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
               height: BOARD_SIZE * squareSize,
             }}
           >
-            {Array.from({ length: BOARD_SIZE }, (_, row) =>
-              Array.from({ length: BOARD_SIZE }, (_, col) => {
-                const square = getSquareName(row, col)
-                const isDark = isDarkSquare(row, col)
+            {Array.from({ length: BOARD_SIZE }, (_, displayRow) =>
+              Array.from({ length: BOARD_SIZE }, (_, displayCol) => {
+                // Convert display coordinates to actual board coordinates
+                const square = getSquareFromDisplay(displayRow, displayCol)
+                // Get actual row/col for dark square check
+                const actualRow = playerColor === 'black' ? 7 - displayRow : displayRow
+                const actualCol = playerColor === 'black' ? 7 - displayCol : displayCol
+                const isDark = isDarkSquare(actualRow, actualCol)
                 const piece = game.board.get(square)
                 const isValidMove = memoizedValidMoves.includes(square)
                 const isSelected = selectedSquare === square
@@ -377,7 +407,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
 
                 return (
                   <div
-                    key={`${row}-${col}`}
+                    key={`${displayRow}-${displayCol}`}
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
@@ -398,8 +428,8 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
                       isLastMove ? 'ring-2 ring-green-400 ring-opacity-90' : ''
                     } transition-all cursor-pointer hover:opacity-90 active:opacity-75`}
                     style={{
-                      left: col * squareSize,
-                      top: row * squareSize,
+                      left: displayCol * squareSize,
+                      top: displayRow * squareSize,
                       width: squareSize,
                       height: squareSize,
                       touchAction: 'none',
@@ -407,7 +437,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
                       zIndex: piece ? 5 : 1,
                     }}
                   >
-                    {piece && renderPiece(piece, row, col)}
+                    {piece && renderPiece(piece, actualRow, actualCol)}
                     {isValidMove && !piece && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                         <div 
