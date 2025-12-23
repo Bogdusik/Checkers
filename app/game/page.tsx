@@ -63,7 +63,6 @@ function GameContent() {
           } else if (isBlackPlayer) {
             newPlayerColor = 'black'
           } else {
-            // User is not part of this game - shouldn't happen but handle gracefully
             if (process.env.NODE_ENV === 'development') {
               console.error('User is not part of this game:', {
                 userId: user.id,
@@ -84,10 +83,10 @@ function GameContent() {
           setLoading(false)
         }
       } catch (error) {
-        if (process.env.NODE_ENV === 'development' && isMounted) {
-          console.error('Error fetching game:', error)
-        }
         if (isMounted) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error fetching game:', error)
+          }
           setLoading(false)
         }
       }
@@ -139,9 +138,7 @@ function GameContent() {
         alert(errorData.error || 'Ошибка хода')
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error making move:', error)
-      }
+      if (process.env.NODE_ENV === 'development') console.error('Error making move:', error)
       alert('Ошибка выполнения хода')
     }
   }
@@ -212,8 +209,7 @@ function GameContent() {
       {/* Main Game Layout - centered vertically */}
       <div className="flex-1 flex items-center justify-center">
         <div className="container mx-auto max-w-7xl w-full">
-          <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Left Column - Board */}
+          <div className="grid lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
           <div className="lg:col-span-2 order-2 lg:order-1 flex items-center justify-center">
             {game.status === 'WAITING' && String(game.whitePlayerId) !== String(game.blackPlayerId) ? (
               <div className="glass-dark rounded-2xl p-6 sm:p-12 text-center w-full">
@@ -240,8 +236,7 @@ function GameContent() {
             )}
           </div>
 
-          {/* Right Column - Info Panels */}
-          <div className="space-y-4 sm:space-y-6 order-1 lg:order-2">
+          <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
