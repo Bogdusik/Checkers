@@ -8,7 +8,7 @@ import MoveHistory from '@/components/MoveHistory'
 import DrawOffer from '@/components/DrawOffer'
 import GameTimer from '@/components/GameTimer'
 import GameChat from '@/components/GameChat'
-import { LogOut, Users, Clock, Trophy, ArrowLeft, Flag, Handshake } from 'lucide-react'
+import { LogOut, Users, Clock, Trophy, ArrowLeft, Flag, Minus } from 'lucide-react'
 import Link from 'next/link'
 import { toastManager } from '@/components/Toast'
 
@@ -411,7 +411,7 @@ function GameContent() {
                 {game.status === 'IN_PROGRESS' && game.fen && (
                   <div className="text-gray-300">
                     Ход: <span className="text-white font-semibold">
-                      {game.fen.split(' ')[1] === 'w' ? 'Белые' : 'Черные'}
+                      {game.fen?.split(' ')[1] === 'w' ? 'Белые' : 'Черные'}
                     </span>
                   </div>
                 )}
@@ -435,7 +435,7 @@ function GameContent() {
                       disabled={!!game.drawOfferBy}
                       className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 border-2 border-yellow-500/50 text-yellow-400 rounded-lg transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Handshake className="w-4 h-4" />
+                      <Minus className="w-4 h-4" />
                       Предложить ничью
                     </button>
                     <button
@@ -475,19 +475,19 @@ function GameContent() {
                 <div className="space-y-2 text-xs sm:text-sm">
                   <div className="flex justify-between text-gray-300">
                     <span>Игр:</span>
-                    <span className="text-white font-semibold">{user.statistics.totalGames}</span>
+                    <span className="text-white font-semibold">{user.statistics?.totalGames || 0}</span>
                   </div>
                   <div className="flex justify-between text-gray-300">
                     <span>Побед:</span>
-                    <span className="text-green-400 font-semibold">{user.statistics.wins}</span>
+                    <span className="text-green-400 font-semibold">{user.statistics?.wins || 0}</span>
                   </div>
                   <div className="flex justify-between text-gray-300">
                     <span>Поражений:</span>
-                    <span className="text-red-400 font-semibold">{user.statistics.losses}</span>
+                    <span className="text-red-400 font-semibold">{user.statistics?.losses || 0}</span>
                   </div>
                   <div className="flex justify-between text-gray-300">
                     <span>Ничьих:</span>
-                    <span className="text-yellow-400 font-semibold">{user.statistics.draws}</span>
+                    <span className="text-yellow-400 font-semibold">{user.statistics?.draws || 0}</span>
                   </div>
                 </div>
               </motion.div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Handshake, Check, X } from 'lucide-react'
+import { Users, Check, X } from 'lucide-react'
 import { toastManager } from './Toast'
 
 interface DrawOfferProps {
@@ -61,7 +61,7 @@ export default function DrawOffer({ gameId, drawOfferBy, currentUserId, onDrawAc
         className="glass-dark rounded-xl p-3 border-2 border-yellow-500/50"
       >
         <div className="flex items-center gap-2 text-yellow-400 text-sm">
-          <Handshake className="w-4 h-4" />
+          <Users className="w-4 h-4" />
           <span>Вы предложили ничью. Ожидание ответа...</span>
         </div>
       </motion.div>
@@ -75,7 +75,7 @@ export default function DrawOffer({ gameId, drawOfferBy, currentUserId, onDrawAc
       className="glass-dark rounded-xl p-4 border-2 border-blue-500/50 shadow-lg"
     >
       <div className="flex items-center gap-3 mb-3">
-        <Handshake className="w-5 h-5 text-blue-400" />
+        <Users className="w-5 h-5 text-blue-400" />
         <h3 className="text-white font-semibold text-sm">
           Предложение ничьей
         </h3>
