@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { ensureUserStatistics } from '@/lib/statistics'
 import { GameStatus } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
@@ -118,33 +119,24 @@ export async function POST(
       const isPlayingAgainstSelf = String(game.whitePlayerId) === String(game.blackPlayerId)
 
       if (!isPlayingAgainstSelf) {
-        const whiteStats = await prisma.userStatistics.findUnique({
-          where: { userId: game.whitePlayerId }
+        const whiteStats = await ensureUserStatistics(game.whitePlayerId)
+        const blackStats = await ensureUserStatistics(game.blackPlayerId)
+
+        await prisma.userStatistics.update({
+          where: { userId: game.whitePlayerId },
+          data: {
+            totalGames: whiteStats.totalGames + 1,
+            draws: whiteStats.draws + 1
+          }
         })
 
-        if (whiteStats) {
-          await prisma.userStatistics.update({
-            where: { userId: game.whitePlayerId },
-            data: {
-              totalGames: whiteStats.totalGames + 1,
-              draws: whiteStats.draws + 1
-            }
-          })
-        }
-
-        const blackStats = await prisma.userStatistics.findUnique({
-          where: { userId: game.blackPlayerId }
+        await prisma.userStatistics.update({
+          where: { userId: game.blackPlayerId },
+          data: {
+            totalGames: blackStats.totalGames + 1,
+            draws: blackStats.draws + 1
+          }
         })
-
-        if (blackStats) {
-          await prisma.userStatistics.update({
-            where: { userId: game.blackPlayerId },
-            data: {
-              totalGames: blackStats.totalGames + 1,
-              draws: blackStats.draws + 1
-            }
-          })
-        }
       }
 
       return NextResponse.json({

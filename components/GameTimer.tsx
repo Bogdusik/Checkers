@@ -40,8 +40,8 @@ export default function GameTimer({ timeLeft, isActive, onTimeUp }: GameTimerPro
   }
 
   const getColorClass = () => {
-    if (!timeLeft || timeLeft > 30) return 'text-white'
-    if (timeLeft > 10) return 'text-yellow-400'
+    if (!timeLeft || displayTime > 30) return 'text-white'
+    if (displayTime > 10) return 'text-yellow-400'
     return 'text-red-400'
   }
 
