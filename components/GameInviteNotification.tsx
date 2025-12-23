@@ -38,9 +38,7 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
           setInvites(data.invites)
         }
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error fetching invites:', error)
-        }
+        if (process.env.NODE_ENV === 'development') console.error('Error fetching invites:', error)
       }
     }
 
@@ -68,9 +66,7 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
         alert(data.error || 'Ошибка принятия приглашения')
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error accepting invite:', error)
-      }
+      if (process.env.NODE_ENV === 'development') console.error('Error accepting invite:', error)
       alert('Ошибка принятия приглашения')
     }
   }
@@ -85,9 +81,7 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
       // Remove declined invite
       setInvites(prev => prev.filter(inv => inv.id !== inviteId))
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error declining invite:', error)
-      }
+      if (process.env.NODE_ENV === 'development') console.error('Error declining invite:', error)
     }
   }
 

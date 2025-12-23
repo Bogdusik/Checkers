@@ -197,7 +197,7 @@ export default function ProfilePage() {
                 alert('Ошибка создания игры')
               }
             } catch (error) {
-              console.error('Error creating game:', error)
+              if (process.env.NODE_ENV === 'development') console.error('Error creating game:', error)
               alert('Ошибка создания игры')
             }
           }}
