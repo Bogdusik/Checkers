@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Gamepad2, Trophy, TrendingUp } from 'lucide-react'
 import PlayerSelector from '@/components/PlayerSelector'
@@ -65,7 +66,14 @@ export default function Home() {
             transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
             className="inline-block mb-4 sm:mb-6"
           >
-            <Gamepad2 className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 text-white" />
+            <Image
+              src="/checkers-logo.svg"
+              alt="Логотип Online Checkers"
+              width={120}
+              height={120}
+              priority
+              className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 drop-shadow-[0_0_18px_rgba(148,163,184,0.55)]"
+            />
           </motion.div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
             Online Checkers

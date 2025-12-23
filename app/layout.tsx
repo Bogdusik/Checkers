@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Online Checkers Game',
   description: 'Play checkers online with your friends',
+  icons: {
+    icon: '/checkers-logo.svg'
+  }
 }
 
 export const viewport: Viewport = {
