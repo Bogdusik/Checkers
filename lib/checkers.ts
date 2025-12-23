@@ -108,6 +108,19 @@ export function fenToGame(fen: string): CheckersGame {
   }
 }
 
+// Check if there are any mandatory captures for the current player
+export function hasMandatoryCaptures(game: CheckersGame): boolean {
+  for (const [square, piece] of game.board.entries()) {
+    if (piece.color === game.currentPlayer) {
+      const captures = getCaptures(game, square)
+      if (captures.length > 0) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 // Get valid moves for a piece
 export function getValidMoves(game: CheckersGame, square: Square): Square[] {
   const piece = game.board.get(square)
@@ -123,6 +136,13 @@ export function getValidMoves(game: CheckersGame, square: Square): Square[] {
   
   // Check for captures first (mandatory)
   const captures = getCaptures(game, square)
+  
+  // If there are any mandatory captures for this player, only allow captures
+  const hasAnyCaptures = hasMandatoryCaptures(game)
+  if (hasAnyCaptures) {
+    return captures
+  }
+  
   if (captures.length > 0) {
     return captures
   }
@@ -146,10 +166,11 @@ export function getValidMoves(game: CheckersGame, square: Square): Square[] {
           // Only allow moves to dark squares
           if (isDarkSquare(newRow - 1, newCol)) {
             const newSquare = String.fromCharCode(97 + newCol) + newRow
-            if (!game.board.has(newSquare)) {
+            const squarePiece = game.board.get(newSquare)
+            if (!squarePiece) {
               moves.push(newSquare)
             } else {
-              // Stop if we hit a piece
+              // Stop if we hit any piece (our own or enemy)
               break
             }
           } else {
@@ -160,7 +181,8 @@ export function getValidMoves(game: CheckersGame, square: Square): Square[] {
         }
       }
     } else {
-      // Regular pieces can only move one square
+      // Regular pieces (men) can only move one square forward diagonally
+      // White moves up (row increases: 1->2->3...), Black moves down (row decreases: 8->7->6...)
       const newCol = col + dc
       const newRow = row + dr
       if (newCol >= 0 && newCol < 8 && newRow >= 1 && newRow <= 8) {
@@ -290,10 +312,23 @@ export function makeMove(game: CheckersGame, from: Square, to: Square): { succes
   const rowDiff = toRow - fromRow
   const isCapture = Math.abs(colDiff) >= 2 || Math.abs(rowDiff) >= 2
   
+  // Check for promotion to king FIRST (before capture logic, as promotion can happen during capture)
+  let newType: PieceType = piece.type
+  if (piece.type === 'man') {
+    if (piece.color === 'white' && toRow === 8) {
+      newType = 'king'
+    } else if (piece.color === 'black' && toRow === 1) {
+      newType = 'king'
+    }
+  }
+  
+  // Use the new type for capture logic if piece was promoted
+  const effectiveType = newType === 'king' ? 'king' : piece.type
+  
   if (isCapture) {
     // Remove captured piece(s)
     // For kings, we need to find all enemy pieces between from and to
-    if (piece.type === 'king') {
+    if (effectiveType === 'king') {
       const colStep = colDiff > 0 ? 1 : -1
       const rowStep = rowDiff > 0 ? 1 : -1
       const distance = Math.abs(colDiff)
@@ -318,16 +353,7 @@ export function makeMove(game: CheckersGame, from: Square, to: Square): { succes
     }
   }
   
-  // Check for promotion to king
-  let newType = piece.type
-  if (piece.type === 'man') {
-    if (piece.color === 'white' && toRow === 8) {
-      newType = 'king'
-    } else if (piece.color === 'black' && toRow === 1) {
-      newType = 'king'
-    }
-  }
-  
+  // Always set the piece with the correct type (important for newly promoted kings)
   newBoard.set(to, { color: piece.color, type: newType })
   
   // Check for game over

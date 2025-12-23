@@ -55,14 +55,15 @@ export default function MoveHistory({ moves, currentPlayer }: MoveHistoryProps) 
         )}
       </div>
       
-      <div className="space-y-2 max-h-64 overflow-y-auto">
-        {moves.length === 0 ? (
-          <div className="text-gray-400 text-sm text-center py-4">
-            Ходов пока нет
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {groupedMoves.map((pair, pairIndex) => (
+      {isExpanded && (
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {moves.length === 0 ? (
+            <div className="text-gray-400 text-sm text-center py-4">
+              Ходов пока нет
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {groupedMoves.map((pair, pairIndex) => (
               <div key={pairIndex} className="flex items-center gap-2 text-xs sm:text-sm">
                 <span className="text-gray-500 font-mono w-8 flex-shrink-0">
                   {pairIndex + 1}.
@@ -97,9 +98,10 @@ export default function MoveHistory({ moves, currentPlayer }: MoveHistoryProps) 
                 </div>
               </div>
             ))}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      )}
     </motion.div>
   )
 }
