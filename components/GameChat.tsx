@@ -68,7 +68,8 @@ export default function GameChat({ gameId, currentUserId }: GameChatProps) {
     if (!gameId) return
 
     fetchMessages()
-    const interval = setInterval(fetchMessages, 2000)
+    // Increased interval to reduce database load
+    const interval = setInterval(fetchMessages, 5000)
 
     return () => clearInterval(interval)
     // eslint-disable-next-line react-hooks/exhaustive-deps
