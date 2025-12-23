@@ -26,6 +26,8 @@ model User {
   statistics    UserStatistics?
   sentInvites   GameInvite[] @relation("SentInvites")
   receivedInvites GameInvite[] @relation("ReceivedInvites")
+  requestedFriends Friend[] @relation("RequestedFriends")
+  receivedFriends  Friend[] @relation("ReceivedFriends")
 }
 
 model UserStatistics {
