@@ -18,9 +18,11 @@ async function computePresence(userId: string) {
     select: userSelect,
   })
 
+  // Check if user is in an active game (IN_PROGRESS and not ended)
   const inGame = await prisma.game.findFirst({
     where: {
       status: 'IN_PROGRESS',
+      endedAt: null, // Game must not be ended
       OR: [{ whitePlayerId: userId }, { blackPlayerId: userId }],
     },
     select: { id: true },

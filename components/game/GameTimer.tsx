@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Clock } from 'lucide-react'
 
 interface GameTimerProps {
@@ -11,17 +11,29 @@ interface GameTimerProps {
 
 export default function GameTimer({ timeLeft, isActive, onTimeUp }: GameTimerProps) {
   const [displayTime, setDisplayTime] = useState(timeLeft || 0)
+  const startTimeRef = useRef<number>(Date.now())
+  const initialTimeRef = useRef<number>(timeLeft || 0)
 
+  // Sync displayTime when timeLeft changes
   useEffect(() => {
-    setDisplayTime(timeLeft || 0)
+    if (timeLeft !== null && timeLeft !== undefined) {
+      setDisplayTime(timeLeft)
+      initialTimeRef.current = timeLeft
+      startTimeRef.current = Date.now()
+    }
   }, [timeLeft])
 
   useEffect(() => {
-    if (!isActive || !timeLeft || timeLeft <= 0) return
+    if (!isActive || !timeLeft || timeLeft <= 0) {
+      if (timeLeft !== null && timeLeft !== undefined) {
+        setDisplayTime(timeLeft)
+      }
+      return
+    }
 
     const interval = setInterval(() => {
       setDisplayTime(prev => {
-        const newTime = prev - 1
+        const newTime = Math.max(0, prev - 1)
         if (newTime <= 0 && onTimeUp) {
           onTimeUp()
         }

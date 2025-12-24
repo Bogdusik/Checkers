@@ -56,6 +56,9 @@ export default function ProfilePage() {
   useEffect(() => {
     if (user) {
       loadFriends()
+      // Refresh friends status every 10 seconds to update online/in-game status
+      const interval = setInterval(loadFriends, 10000)
+      return () => clearInterval(interval)
     }
   }, [user])
 
