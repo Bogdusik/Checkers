@@ -3,14 +3,14 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import CheckersBoard from '@/components/CheckersBoard'
-import MoveHistory from '@/components/MoveHistory'
-import DrawOffer from '@/components/DrawOffer'
-import GameTimer from '@/components/GameTimer'
-import GameChat from '@/components/GameChat'
+import CheckersBoard from '@/components/game/CheckersBoard'
+import MoveHistory from '@/components/game/MoveHistory'
+import DrawOffer from '@/components/game/DrawOffer'
+import GameTimer from '@/components/game/GameTimer'
+import GameChat from '@/components/game/GameChat'
 import { LogOut, Users, Clock, Trophy, ArrowLeft, Flag, Minus } from 'lucide-react'
 import Link from 'next/link'
-import { toastManager } from '@/components/Toast'
+import { toastManager } from '@/components/ui/Toast'
 
 function GameContent() {
   const router = useRouter()
