@@ -148,8 +148,12 @@ Admin can:
 │   ├── utils.ts           # General utilities
 │   └── __tests__/         # Unit tests
 │       └── checkers.test.ts
-└── prisma/                # Prisma schema
-    └── schema.prisma      # Database schema
+├── prisma/                # Prisma schema
+│   └── schema.prisma      # Database schema
+├── scripts/               # Utility scripts
+│   ├── migrate-database.sh    # Database migration script
+│   └── supabase-rls-setup.sql # Supabase RLS setup
+└── [config files]         # Next.js, TypeScript, Tailwind, Vitest configs
 ```
 
 ## Testing
