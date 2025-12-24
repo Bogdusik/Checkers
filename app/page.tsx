@@ -6,9 +6,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Gamepad2, Trophy, TrendingUp } from 'lucide-react'
-import PlayerSelector from '@/components/PlayerSelector'
-import GameInviteNotification from '@/components/GameInviteNotification'
-import { toastManager } from '@/components/Toast'
+import PlayerSelector from '@/components/ui/PlayerSelector'
+import GameInviteNotification from '@/components/notifications/GameInviteNotification'
+import { toastManager } from '@/components/ui/Toast'
 
 export default function Home() {
   const router = useRouter()

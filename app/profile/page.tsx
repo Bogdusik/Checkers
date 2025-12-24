@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Trophy, TrendingUp, Calendar, LogOut, ArrowLeft, Shield, UserPlus, Check, X, Gamepad2, CircleDot, Settings } from 'lucide-react'
-import PlayerSelector from '@/components/PlayerSelector'
-import ThemeSettings from '@/components/ThemeSettings'
-import { toastManager } from '@/components/Toast'
+import PlayerSelector from '@/components/ui/PlayerSelector'
+import ThemeSettings from '@/components/ui/ThemeSettings'
+import { toastManager } from '@/components/ui/Toast'
 
 export default function ProfilePage() {
   const router = useRouter()

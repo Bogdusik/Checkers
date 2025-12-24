@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Trophy, Users, Calendar, Clock } from 'lucide-react'
 import Link from 'next/link'
-import { toastManager } from '@/components/Toast'
+import { toastManager } from '@/components/ui/Toast'
 
 interface Game {
   id: string
