@@ -89,14 +89,15 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
   if (invites.length === 0) return null
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
+    <div className="fixed top-4 right-4 z-40 space-y-2 max-w-sm">
       <AnimatePresence>
-        {invites.map((invite) => (
+        {invites.map((invite, index) => (
           <motion.div
             key={invite.id}
             initial={{ opacity: 0, x: 300 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 300 }}
+            style={{ marginTop: index > 0 ? '0.5rem' : 0 }}
             className="glass-dark rounded-xl p-4 border-2 border-blue-500/50 shadow-lg"
           >
             <div className="flex items-start gap-3">

@@ -1,18 +1,47 @@
-// Checkers game logic
+/**
+ * Checkers game logic
+ * Implements Russian checkers rules with support for regular pieces and kings
+ * 
+ * @module checkers
+ */
 
+/**
+ * Color of a checkers piece
+ */
 export type PieceColor = 'white' | 'black'
-export type PieceType = 'man' | 'king'
-export type Square = string // e.g., "a1", "b2"
 
+/**
+ * Type of a checkers piece (regular man or promoted king)
+ */
+export type PieceType = 'man' | 'king'
+
+/**
+ * Square notation (e.g., "a1", "b2")
+ * Format: letter (a-h) + number (1-8)
+ */
+export type Square = string
+
+/**
+ * Represents a checkers piece
+ */
 export interface Piece {
+  /** Color of the piece */
   color: PieceColor
+  /** Type of the piece (man or king) */
   type: PieceType
 }
 
+/**
+ * Complete game state
+ */
 export interface CheckersGame {
+  /** Board state: map of squares to pieces */
   board: Map<Square, Piece>
+  /** Current player whose turn it is */
   currentPlayer: PieceColor
+  /** Whether the game has ended */
   gameOver: boolean
+  /** Winner of the game (null if game not over or draw) */
   winner: PieceColor | null
 }
 
@@ -42,7 +71,18 @@ const getDirections = (piece: Piece): number[][] => {
     : [[-1, -1], [1, -1]] // Black moves down
 }
 
-// Initialize checkers board
+/**
+ * Creates a new checkers game with initial board setup
+ * 
+ * White pieces are placed on rows 1-3 (bottom)
+ * Black pieces are placed on rows 6-8 (top)
+ * 
+ * @returns {CheckersGame} New game state with initial board configuration
+ * @example
+ * const game = createNewGame()
+ * console.log(game.currentPlayer) // 'white'
+ * console.log(game.board.size) // 24 (12 white + 12 black)
+ */
 export function createNewGame(): CheckersGame {
   const board = new Map<Square, Piece>()
   
@@ -70,7 +110,22 @@ export function createNewGame(): CheckersGame {
   }
 }
 
-// Convert game to FEN-like string for storage
+/**
+ * Converts game state to FEN-like string for storage
+ * 
+ * Format: "board/board/... currentPlayer gameOver"
+ * - Board: rows separated by '/', pieces represented as 'w' (white man), 'W' (white king), 
+ *   'b' (black man), 'B' (black king), '-' (empty)
+ * - Current player: 'w' or 'b'
+ * - Game over: '1' or '0'
+ * 
+ * @param {CheckersGame} game - Game state to convert
+ * @returns {string} FEN string representation
+ * @example
+ * const game = createNewGame()
+ * const fen = gameToFen(game)
+ * // Returns something like: "--------/--------/--------/--------/--------/--------/--------/-------- w 0"
+ */
 export function gameToFen(game: CheckersGame): string {
   const pieces: string[] = []
   for (let row = 8; row >= 1; row--) {
@@ -90,7 +145,15 @@ export function gameToFen(game: CheckersGame): string {
   return pieces.join('/') + ' ' + game.currentPlayer[0] + ' ' + (game.gameOver ? '1' : '0')
 }
 
-// Parse FEN-like string to game
+/**
+ * Parses FEN-like string to game state
+ * 
+ * @param {string} fen - FEN string to parse
+ * @returns {CheckersGame} Game state reconstructed from FEN
+ * @example
+ * const fen = "--------/--------/--------/--------/--------/--------/--------/-------- w 0"
+ * const game = fenToGame(fen)
+ */
 export function fenToGame(fen: string): CheckersGame {
   if (!fen || fen.trim() === '') {
     return createNewGame()
@@ -139,7 +202,19 @@ export function hasMandatoryCaptures(game: CheckersGame): boolean {
   return false
 }
 
-// Get valid moves for a piece
+/**
+ * Gets all valid moves for a piece on a given square
+ * 
+ * Enforces mandatory capture rule: if any captures are available, only captures are returned
+ * 
+ * @param {CheckersGame} game - Current game state
+ * @param {Square} square - Square to get moves for
+ * @returns {Square[]} Array of valid destination squares
+ * @example
+ * const game = createNewGame()
+ * const moves = getValidMoves(game, 'd2')
+ * // Returns: ['c3', 'e3'] (diagonal forward moves for white)
+ */
 export function getValidMoves(game: CheckersGame, square: Square): Square[] {
   const piece = game.board.get(square)
   if (!piece || piece.color !== game.currentPlayer) {
@@ -310,7 +385,23 @@ function checkPromotion(piece: Piece, row: number): PieceType {
   return piece.type
 }
 
-// Make a move (supports single moves and captures, but not multi-capture chains)
+/**
+ * Makes a move in the game
+ * 
+ * Validates the move, executes captures if needed, promotes pieces to kings,
+ * and checks for game over conditions (no pieces left or no valid moves)
+ * 
+ * @param {CheckersGame} game - Current game state
+ * @param {Square} from - Source square
+ * @param {Square} to - Destination square
+ * @returns {{ success: boolean; newGame: CheckersGame }} Result with success flag and new game state
+ * @example
+ * const game = createNewGame()
+ * const result = makeMove(game, 'd2', 'c3')
+ * if (result.success) {
+ *   console.log(result.newGame.currentPlayer) // 'black'
+ * }
+ */
 export function makeMove(game: CheckersGame, from: Square, to: Square): { success: boolean; newGame: CheckersGame } {
   const piece = game.board.get(from)
   if (!piece || piece.color !== game.currentPlayer) {
@@ -382,7 +473,17 @@ export function getGameStatus(game: CheckersGame): 'in_progress' | 'white_won' |
   return 'in_progress'
 }
 
-// Check if player has any valid moves
+/**
+ * Checks if a player of the given color has any valid moves
+ * 
+ * @param {CheckersGame} game - Current game state
+ * @param {PieceColor} color - Color to check moves for
+ * @returns {boolean} True if player has at least one valid move
+ * @example
+ * const game = createNewGame()
+ * const hasMoves = hasValidMoves(game, 'white')
+ * // Returns: true (white has moves in initial position)
+ */
 export function hasValidMoves(game: CheckersGame, color: PieceColor): boolean {
   return Array.from(game.board.entries()).some(([square, piece]) => {
     if (piece.color === color) {
