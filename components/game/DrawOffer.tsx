@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Users, Check, X } from 'lucide-react'
-import { toastManager } from './Toast'
+import { toastManager } from '@/components/ui/Toast'
 
 interface DrawOfferProps {
   gameId: string

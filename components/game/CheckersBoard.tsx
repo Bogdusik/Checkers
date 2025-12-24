@@ -199,30 +199,19 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
     }
   }, [gameId])
 
-  const isDarkSquare = (row: number, col: number) => {
-    return (row + col) % 2 === 1
-  }
-
-  const getSquareName = (row: number, col: number): Square => {
-    return (String.fromCharCode(97 + col) + (8 - row)) as Square
-  }
+  const isDarkSquare = (row: number, col: number) => (row + col) % 2 === 1
   
-  // Get display coordinates (flipped for black player)
-  const getDisplayCoords = (row: number, col: number) => {
-    if (playerColor === 'black') {
-      return { row: 7 - row, col: 7 - col }
-    }
-    return { row, col }
-  }
+  const coordsToSquare = (col: number, row: number): Square => 
+    (String.fromCharCode(97 + col) + row) as Square
   
-  // Get actual square name from display coordinates
+  // Get actual square name from display coordinates (board is flipped for black player)
   const getSquareFromDisplay = (displayRow: number, displayCol: number): Square => {
     if (playerColor === 'black') {
-      const actualRow = 7 - displayRow
+      const actualRow = 8 - (7 - displayRow)
       const actualCol = 7 - displayCol
-      return (String.fromCharCode(97 + actualCol) + (8 - actualRow)) as Square
+      return coordsToSquare(actualCol, actualRow)
     }
-    return (String.fromCharCode(97 + displayCol) + (8 - displayRow)) as Square
+    return coordsToSquare(displayCol, 8 - displayRow)
   }
 
   const handleSquareClick = (square: Square) => {
@@ -290,7 +279,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
   }
 
   const renderPiece = (piece: { color: 'white' | 'black'; type: 'man' | 'king' }, row: number, col: number) => {
-    const isSelected = selectedSquare === getSquareName(row, col)
+    const isSelected = selectedSquare === coordsToSquare(col, row)
     const isWhite = piece.color === 'white'
     const pieceSize = Math.max(squareSize * 0.75, 24)
     const kingSize = squareSize < 40 ? 'text-lg' : squareSize < 50 ? 'text-xl' : 'text-2xl'
@@ -459,3 +448,4 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
     </div>
   )
 }
+

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, X, Check, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { toastManager } from './Toast'
+import { toastManager } from '@/components/ui/Toast'
 
 interface GameInvite {
   id: string
