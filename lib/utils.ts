@@ -23,3 +23,9 @@ export const isToday = (date: string | null) => {
   return checkDate.toDateString() === today.toDateString()
 }
 
+// Compare IDs safely (handles string/number conversion)
+export const idsEqual = (id1: string | number | null | undefined, id2: string | number | null | undefined): boolean => {
+  if (id1 === null || id1 === undefined || id2 === null || id2 === undefined) return false
+  return String(id1) === String(id2)
+}
+
