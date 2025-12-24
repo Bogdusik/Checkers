@@ -207,10 +207,15 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
   // Get actual square name from display coordinates (board is flipped for black player)
   const getSquareFromDisplay = (displayRow: number, displayCol: number): Square => {
     if (playerColor === 'black') {
-      const actualRow = 8 - (7 - displayRow)
+      // For black player: flip both row and col
+      // displayRow 0-7 (top to bottom) -> actualRow 8-1 (bottom to top)
+      // displayCol 0-7 (left to right) -> actualCol 7-0 (right to left)
+      const actualRow = 8 - displayRow
       const actualCol = 7 - displayCol
       return coordsToSquare(actualCol, actualRow)
     }
+    // For white player: row is flipped, col is not
+    // displayRow 0-7 (top to bottom) -> actualRow 8-1 (bottom to top)
     return coordsToSquare(displayCol, 8 - displayRow)
   }
 

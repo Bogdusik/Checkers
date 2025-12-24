@@ -17,6 +17,10 @@ model User {
   updatedAt     DateTime @updatedAt
   lastLoginAt   DateTime?
   
+  @@index([lastLoginAt])
+  @@index([email])
+  @@index([username])
+  
   whiteGames    Game[]  @relation("WhiteGames")
   blackGames    Game[]  @relation("BlackGames")
   wonGames      Game[]  @relation("WonGames")
@@ -87,6 +91,9 @@ model GameMove {
   moveNumber    Int
   
   createdAt     DateTime @default(now())
+  
+  @@index([gameId, moveNumber])
+  @@index([gameId, createdAt])
 }
 
 model GameMessage {
