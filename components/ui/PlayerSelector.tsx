@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, User, Wifi, WifiOff, X, Send } from 'lucide-react'
-import { toastManager } from './Toast'
+import { toastManager } from '@/components/ui/Toast'
 
 interface Player {
   id: string
