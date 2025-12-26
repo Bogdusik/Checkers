@@ -49,15 +49,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Приглашение уже обработано' }, { status: 400 })
     }
 
-    if (new Date(invite.expiresAt) < new Date()) {
-      // Mark as expired
-      await prisma.gameInvite.update({
-        where: { id: inviteId },
-        data: { status: 'EXPIRED' }
-      })
-      return NextResponse.json({ error: 'Приглашение истекло' }, { status: 400 })
-    }
-
     // Use transaction to ensure atomicity
     const result = await prisma.$transaction(async (tx) => {
       // Double-check invite status (prevent race condition)
@@ -67,6 +58,16 @@ export async function POST(request: NextRequest) {
 
       if (!currentInvite) {
         throw new Error('Приглашение не найдено')
+      }
+
+      // Check if invite expired
+      if (new Date(currentInvite.expiresAt) < new Date()) {
+        // Mark as expired within transaction
+        await tx.gameInvite.update({
+          where: { id: inviteId },
+          data: { status: 'EXPIRED' }
+        })
+        throw new Error('Приглашение истекло')
       }
 
       if (currentInvite.status !== 'PENDING') {
@@ -117,14 +118,22 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Update invite
-      await tx.gameInvite.update({
-        where: { id: inviteId },
+      // Update invite - use updateMany to avoid potential unique constraint issues
+      const updateResult = await tx.gameInvite.updateMany({
+        where: { 
+          id: inviteId,
+          status: 'PENDING' // Only update if still pending (prevent race condition)
+        },
         data: {
           status: 'ACCEPTED',
           gameId: game.id
         }
       })
+
+      // If update didn't affect any rows, invite was already processed
+      if (updateResult.count === 0) {
+        throw new Error('Приглашение уже обработано')
+      }
 
       return game
     })
@@ -133,19 +142,31 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ game, inviteId })
   } catch (error: any) {
-    // Log detailed error in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error accepting invite:', error)
-      console.error('Error details:', {
-        message: error?.message,
-        code: error?.code,
-        meta: error?.meta
-      })
-    }
+    // Log detailed error (always log in production for debugging)
+    console.error('Error accepting invite:', error)
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      name: error?.name,
+      stack: error?.stack
+    })
     
     // Check for specific Prisma errors
     if (error?.code === 'P2002') {
-      // Unique constraint violation - this shouldn't happen now, but handle it gracefully
+      // Unique constraint violation
+      const constraintFields = error?.meta?.target || []
+      console.error('Unique constraint violation:', constraintFields)
+      
+      // If it's the old constraint (fromUserId, toUserId, status), migration wasn't applied
+      if (constraintFields.includes('fromUserId') && constraintFields.includes('toUserId') && constraintFields.includes('status')) {
+        console.error('CRITICAL: Database migration not applied! Unique constraint (fromUserId, toUserId, status) still exists.')
+        return NextResponse.json(
+          { error: 'Ошибка обновления приглашения. Обратитесь к администратору.' },
+          { status: 500 }
+        )
+      }
+      
       return NextResponse.json(
         { error: 'Ошибка обновления приглашения. Попробуйте еще раз.' },
         { status: 400 }
@@ -157,6 +178,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Ошибка подключения к базе данных. Попробуйте позже.' },
         { status: 503 }
+      )
+    }
+    
+    // Handle custom errors from transaction
+    if (error?.message === 'Приглашение не найдено' || 
+        error?.message === 'Приглашение уже обработано' ||
+        error?.message === 'Вы не можете принять это приглашение' ||
+        error?.message === 'Нельзя играть с самим собой' ||
+        error?.message === 'Приглашение истекло') {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
       )
     }
     
