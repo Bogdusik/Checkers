@@ -24,7 +24,10 @@ function GameContent() {
   const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null)
 
   useEffect(() => {
-    fetch('/api/auth/me')
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    
+    fetch('/api/auth/me', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (!data.user) {
@@ -34,20 +37,28 @@ function GameContent() {
         setUser(data.user)
       })
       .catch(() => router.push('/login'))
+      .finally(() => clearTimeout(timeoutId))
   }, [router])
 
   useEffect(() => {
     if (!gameId || !user) return
 
     let isMounted = true
-    let pollInterval = 1000
+    let pollInterval = 2000
     let intervalId: NodeJS.Timeout
 
     const fetchGame = async () => {
       if (!isMounted) return
       
       try {
-        const res = await fetch(`/api/game/${gameId}`, { cache: 'no-store' })
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        const res = await fetch(`/api/game/${gameId}`, { 
+          signal: controller.signal,
+          cache: 'no-store' 
+        })
+        clearTimeout(timeoutId)
+        
         if (!isMounted) return
         
         if (res.status === 401) {
@@ -63,14 +74,14 @@ function GameContent() {
         }
         
         if (res.status >= 500) {
-          pollInterval = Math.min(pollInterval * 1.5, 5000)
+          pollInterval = Math.min(pollInterval * 1.5, 10000)
           clearInterval(intervalId)
           intervalId = setInterval(fetchGame, pollInterval)
           return
         }
         
-        if (pollInterval > 1000) {
-          pollInterval = 1000
+        if (pollInterval > 2000) {
+          pollInterval = 2000
           clearInterval(intervalId)
           intervalId = setInterval(fetchGame, pollInterval)
         }
@@ -92,8 +103,8 @@ function GameContent() {
           setPlayerColor(isWhite ? 'white' : isBlack ? 'black' : 'white')
           setLoading(false)
         }
-      } catch (error) {
-        pollInterval = Math.min(pollInterval * 1.5, 5000)
+      } catch {
+        pollInterval = Math.min(pollInterval * 1.5, 10000)
         clearInterval(intervalId)
         intervalId = setInterval(fetchGame, pollInterval)
         if (isMounted) setLoading(false)

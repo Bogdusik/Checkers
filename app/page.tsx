@@ -16,40 +16,42 @@ export default function Home() {
   const [showPlayerSelector, setShowPlayerSelector] = useState(false)
 
   useEffect(() => {
-    fetch('/api/auth/me')
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    
+    fetch('/api/auth/me', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
-        if (data.user) {
-          setUser(data.user)
-        }
+        if (data.user) setUser(data.user)
       })
       .catch(() => {})
+      .finally(() => clearTimeout(timeoutId))
   }, [])
 
-  // Poll for accepted invites (when someone accepts your invite)
   useEffect(() => {
     if (!user) return
 
     const checkAcceptedInvite = async () => {
       try {
-        const res = await fetch('/api/game/invite/check', {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' }
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 3000)
+        const res = await fetch('/api/game/invite/check', { 
+          signal: controller.signal,
+          cache: 'no-store' 
         })
+        clearTimeout(timeoutId)
+        
         const data = await res.json()
         if (data.hasGame && data.gameId) {
-          // Navigate to the game
           router.push(`/game?id=${data.gameId}`)
         }
-      } catch (error) {
+      } catch {
         // Silently fail
       }
     }
 
-    // Check immediately and then every 2 seconds
     checkAcceptedInvite()
-    const interval = setInterval(checkAcceptedInvite, 2000)
-
+    const interval = setInterval(checkAcceptedInvite, 5000)
     return () => clearInterval(interval)
   }, [user, router])
 
@@ -171,19 +173,23 @@ export default function Home() {
           onClose={() => setShowPlayerSelector(false)}
           onSelectPlayer={async (opponentId) => {
             try {
+              const controller = new AbortController()
+              const timeoutId = setTimeout(() => controller.abort(), 10000)
               const res = await fetch('/api/game/create-with-opponent', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ opponentId })
+                body: JSON.stringify({ opponentId }),
+                signal: controller.signal
               })
+              clearTimeout(timeoutId)
+              
               const data = await res.json()
               if (data.game) {
                 router.push(`/game?id=${data.game.id}`)
               } else {
                 toastManager.error(data.error || 'Ошибка создания игры')
               }
-            } catch (error) {
-              if (process.env.NODE_ENV === 'development') console.error('Error creating game:', error)
+            } catch {
               toastManager.error('Ошибка создания игры')
             }
           }}
@@ -195,4 +201,3 @@ export default function Home() {
     </div>
   )
 }
-
