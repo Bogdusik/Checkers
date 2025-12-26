@@ -40,6 +40,10 @@ function GameContent() {
     if (!gameId || !user) return
 
     let isMounted = true
+    let errorCount = 0
+    let pollInterval = 500 // Start with 500ms
+    const maxInterval = 5000 // Max 5 seconds between polls
+    let intervalId: NodeJS.Timeout | null = null
 
     const fetchGame = async () => {
       if (!isMounted) return
@@ -51,6 +55,71 @@ function GameContent() {
         })
         
         if (!isMounted) return
+        
+        // Handle 401 - unauthorized, stop polling
+        if (res.status === 401) {
+          console.error('Unauthorized access to game. Stopping polling.')
+          if (intervalId) {
+            clearInterval(intervalId)
+            intervalId = null
+          }
+          toastManager.error('Сессия истекла. Пожалуйста, войдите снова.')
+          router.push('/login')
+          return
+        }
+        
+        // Handle 403 - forbidden, stop polling
+        if (res.status === 403) {
+          console.error('Forbidden access to game. Stopping polling.')
+          if (intervalId) {
+            clearInterval(intervalId)
+            intervalId = null
+          }
+          toastManager.error('Нет доступа к этой игре')
+          router.push('/')
+          return
+        }
+        
+        // Handle 404 - game not found, stop polling
+        if (res.status === 404) {
+          console.error('Game not found. Stopping polling.')
+          if (intervalId) {
+            clearInterval(intervalId)
+            intervalId = null
+          }
+          toastManager.error('Игра не найдена')
+          router.push('/')
+          return
+        }
+        
+        // Handle 500/503 - server errors, but continue polling with backoff
+        if (res.status >= 500) {
+          errorCount++
+          // Exponential backoff: increase interval on errors
+          pollInterval = Math.min(pollInterval * 1.5, maxInterval)
+          
+          if (errorCount <= 3) {
+            // Only log first few errors to avoid spam
+            console.warn(`Server error (${res.status}), retrying with ${pollInterval}ms interval. Error count: ${errorCount}`)
+          }
+          
+          // Reset interval with new pollInterval
+          if (intervalId) {
+            clearInterval(intervalId)
+            intervalId = setInterval(fetchGame, pollInterval)
+          }
+          return
+        }
+        
+        // Success - reset error count and interval
+        if (errorCount > 0) {
+          errorCount = 0
+          pollInterval = 500
+          if (intervalId) {
+            clearInterval(intervalId)
+            intervalId = setInterval(fetchGame, pollInterval)
+          }
+        }
         
         const data = await res.json()
         if (data.game && isMounted) {
@@ -98,10 +167,20 @@ function GameContent() {
           setLoading(false)
         }
       } catch (error) {
+        errorCount++
+        pollInterval = Math.min(pollInterval * 1.5, maxInterval)
+        
+        if (errorCount <= 3) {
+          console.error('Error fetching game:', error)
+        }
+        
+        // Reset interval with new pollInterval
+        if (intervalId) {
+          clearInterval(intervalId)
+          intervalId = setInterval(fetchGame, pollInterval)
+        }
+        
         if (isMounted) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Error fetching game:', error)
-          }
           setLoading(false)
         }
       }
@@ -109,16 +188,16 @@ function GameContent() {
 
     fetchGame()
     
-    // Poll for game updates every 500ms for very fast synchronization
-    const interval = setInterval(() => {
-      fetchGame()
-    }, 500)
+    // Poll for game updates with adaptive interval
+    intervalId = setInterval(fetchGame, pollInterval)
     
     return () => {
       isMounted = false
-      clearInterval(interval)
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
     }
-  }, [gameId, user])
+  }, [gameId, user, router])
 
   const handleMove = async (moveString: string) => {
     if (!gameId || game.status !== 'IN_PROGRESS') return
