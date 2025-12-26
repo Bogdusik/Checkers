@@ -11,10 +11,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    const body = await request.json()
+    let body
+    try {
+      body = await request.json()
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError)
+      return NextResponse.json({ error: 'Неверный формат запроса' }, { status: 400 })
+    }
+
     const { toUserId } = body
 
-    if (!toUserId) {
+    if (!toUserId || typeof toUserId !== 'string') {
+      console.error('Invalid toUserId:', toUserId, 'Type:', typeof toUserId)
       return NextResponse.json({ error: 'Не указан получатель приглашения' }, { status: 400 })
     }
 
@@ -34,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Use transaction to ensure atomicity and prevent race conditions
     const invite = await prisma.$transaction(async (tx) => {
       // First, mark expired invites as EXPIRED
-      await tx.gameInvite.updateMany({
+      const expiredCount = await tx.gameInvite.updateMany({
         where: {
           OR: [
             { fromUserId: user.id, toUserId },
@@ -49,6 +57,10 @@ export async function POST(request: NextRequest) {
           status: 'EXPIRED'
         }
       })
+      
+      if (expiredCount.count > 0) {
+        console.log(`Marked ${expiredCount.count} expired invite(s)`)
+      }
 
       // Check if there's already a pending invite (in either direction)
       // This prevents duplicate PENDING invites between the same users
@@ -65,6 +77,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (existingInvite) {
+        console.log('Existing pending invite found:', existingInvite.id)
         throw new Error('Приглашение уже отправлено')
       }
 
