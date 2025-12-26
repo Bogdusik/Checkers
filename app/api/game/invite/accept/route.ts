@@ -39,7 +39,16 @@ export async function POST(request: NextRequest) {
 
     // Check if user is the recipient of the invite
     // Only the person who received the invite can accept it
-    if (invite.toUserId !== user.id) {
+    // Use String() to ensure type consistency
+    if (String(invite.toUserId) !== String(user.id)) {
+      console.error('User mismatch:', {
+        inviteToUserId: invite.toUserId,
+        inviteToUserIdType: typeof invite.toUserId,
+        userId: user.id,
+        userIdType: typeof user.id,
+        areEqual: invite.toUserId === user.id,
+        stringEqual: String(invite.toUserId) === String(user.id)
+      })
       return NextResponse.json({ 
         error: 'Вы не можете принять это приглашение. Только получатель может принять приглашение.' 
       }, { status: 403 })
@@ -74,7 +83,12 @@ export async function POST(request: NextRequest) {
         throw new Error('Приглашение уже обработано')
       }
 
-      if (currentInvite.toUserId !== user.id) {
+      // Use String() to ensure type consistency
+      if (String(currentInvite.toUserId) !== String(user.id)) {
+        console.error('Transaction user mismatch:', {
+          inviteToUserId: currentInvite.toUserId,
+          userId: user.id
+        })
         throw new Error('Вы не можете принять это приглашение')
       }
 
