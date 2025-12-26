@@ -65,6 +65,16 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
         body: JSON.stringify({ toUserId: playerId })
       })
       const data = await res.json()
+      
+      if (!res.ok) {
+        // Server returned an error status
+        toastManager.error(data.error || 'Ошибка отправки приглашения')
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Send invite error:', data.error, 'Status:', res.status)
+        }
+        return
+      }
+      
       if (data.invite) {
         toastManager.success(`Приглашение отправлено ${data.invite.toUser.username}`)
         onClose()
@@ -72,8 +82,10 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
         toastManager.error(data.error || 'Ошибка отправки приглашения')
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error sending invite:', error)
-      toastManager.error('Ошибка отправки приглашения')
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error sending invite:', error)
+      }
+      toastManager.error('Ошибка подключения. Проверьте интернет-соединение.')
     }
   }
 
