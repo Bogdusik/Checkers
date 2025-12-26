@@ -14,6 +14,10 @@ const globalForPrisma = globalThis as unknown as {
 
 // Configure Prisma with connection pooling settings
 // This helps prevent "MaxClientsInSessionMode" errors
+// 
+// IMPORTANT: For Supabase in production, use Connection Pooling URL (port 6543)
+// instead of direct connection (port 5432). Add ?pgbouncer=true parameter.
+// See SUPABASE_CONNECTION_POOLING.md for details.
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
   datasources: {

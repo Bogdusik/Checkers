@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if there's already a pending invite (in either direction)
+    // This prevents duplicate PENDING invites between the same users
     const existingInvite = await prisma.gameInvite.findFirst({
       where: {
         OR: [
