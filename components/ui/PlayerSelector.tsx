@@ -29,30 +29,29 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (isOpen) {
-      fetchPlayers()
-      // Refresh players list every 10 seconds
-      const interval = setInterval(fetchPlayers, 10000)
-      return () => clearInterval(interval)
+    if (!isOpen) return
+
+    const fetchPlayers = async () => {
+      try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        const res = await fetch('/api/game/players', { signal: controller.signal })
+        clearTimeout(timeoutId)
+        
+        const data = await res.json()
+        if (data.players) setPlayers(data.players)
+        setLoading(false)
+      } catch {
+        setLoading(false)
+      }
     }
+
+    fetchPlayers()
+    const interval = setInterval(fetchPlayers, 15000)
+    return () => clearInterval(interval)
   }, [isOpen])
 
-  const fetchPlayers = async () => {
-    try {
-      const res = await fetch('/api/game/players')
-      const data = await res.json()
-      if (data.players) {
-        setPlayers(data.players)
-      }
-      setLoading(false)
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error fetching players:', error)
-      setLoading(false)
-    }
-  }
-
   const handleSelect = (playerId: string | null) => {
-    // null means play against self
     onSelectPlayer(playerId)
     onClose()
   }
@@ -61,13 +60,17 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
     if (!playerId) return
 
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
       const res = await fetch('/api/game/invite/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toUserId: playerId })
+        body: JSON.stringify({ toUserId: playerId }),
+        signal: controller.signal
       })
-      const data = await res.json()
+      clearTimeout(timeoutId)
       
+      const data = await res.json()
       if (!res.ok) {
         toastManager.error(data.error || 'Ошибка отправки приглашения')
         return
@@ -79,7 +82,7 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
       } else {
         toastManager.error(data.error || 'Ошибка отправки приглашения')
       }
-    } catch (error) {
+    } catch {
       toastManager.error('Ошибка подключения')
     }
   }
@@ -100,16 +103,12 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
               <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
               <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">Выберите соперника</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-black/20 rounded-lg transition-colors"
-            >
+            <button onClick={onClose} className="p-2 hover:bg-black/20 rounded-lg transition-colors">
               <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-2 sm:space-y-3">
-            {/* Play against self option */}
             <motion.div
               whileHover={{ scale: 1.02 }}
               onClick={() => handleSelect(null)}
@@ -138,9 +137,7 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
                 />
               </div>
             ) : players.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                Нет других игроков
-              </div>
+              <div className="text-center py-8 text-gray-400">Нет других игроков</div>
             ) : (
               players.map((player) => (
                 <motion.div
@@ -189,7 +186,6 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
                               handleInvite(player.id)
                             }}
                             className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs sm:text-sm font-semibold flex items-center gap-1"
-                            title="Пригласить друга сыграть в матч"
                           >
                             <Send className="w-3 h-3 sm:w-4 sm:h-4" />
                             <span className="hidden sm:inline">Пригласить</span>
@@ -208,4 +204,3 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
     </AnimatePresence>
   )
 }
-

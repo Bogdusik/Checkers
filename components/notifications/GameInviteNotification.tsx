@@ -30,28 +30,39 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
 
     const fetchInvites = async () => {
       try {
-        const res = await fetch('/api/game/invite/list', { cache: 'no-store' })
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 3000)
+        const res = await fetch('/api/game/invite/list', { 
+          signal: controller.signal,
+          cache: 'no-store' 
+        })
+        clearTimeout(timeoutId)
+        
         const data = await res.json()
         if (data.invites) setInvites(data.invites)
-      } catch (error) {
+      } catch {
         // Silently fail
       }
     }
 
     fetchInvites()
-    const interval = setInterval(fetchInvites, 2000)
+    const interval = setInterval(fetchInvites, 5000)
     return () => clearInterval(interval)
   }, [userId])
 
   const handleAccept = async (inviteId: string) => {
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
       const res = await fetch('/api/game/invite/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inviteId })
+        body: JSON.stringify({ inviteId }),
+        signal: controller.signal
       })
-      const data = await res.json()
+      clearTimeout(timeoutId)
       
+      const data = await res.json()
       if (!res.ok) {
         toastManager.error(data.error || 'Ошибка принятия приглашения')
         return
@@ -63,20 +74,24 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
       } else {
         toastManager.error(data.error || 'Ошибка принятия приглашения')
       }
-    } catch (error) {
+    } catch {
       toastManager.error('Ошибка подключения')
     }
   }
 
   const handleDecline = async (inviteId: string) => {
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
       await fetch('/api/game/invite/decline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inviteId })
+        body: JSON.stringify({ inviteId }),
+        signal: controller.signal
       })
+      clearTimeout(timeoutId)
       setInvites(prev => prev.filter(inv => inv.id !== inviteId))
-    } catch (error) {
+    } catch {
       // Silently fail
     }
   }

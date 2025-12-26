@@ -150,7 +150,14 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
         if (fallbackInterval) clearInterval(fallbackInterval)
         fallbackInterval = setInterval(async () => {
           try {
-            const res = await fetch(`/api/game/${gameId}`, { cache: 'no-store' })
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 5000)
+            const res = await fetch(`/api/game/${gameId}`, { 
+              signal: controller.signal,
+              cache: 'no-store' 
+            })
+            clearTimeout(timeoutId)
+            
             const data = await res.json()
             if (data.game && data.game.fen) {
               handleServerState({ fen: data.game.fen, game: data.game })
@@ -158,7 +165,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
           } catch {
             // ignore
           }
-        }, 5000)
+        }, 10000)
 
         setTimeout(() => {
           if (isMounted && !eventSourceRef.current) {
