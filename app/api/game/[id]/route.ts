@@ -63,12 +63,26 @@ export async function GET(
 
 
     return NextResponse.json({ game })
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching game:', error)
+  } catch (error: any) {
+    // Always log errors for debugging
+    console.error('Error fetching game:', error)
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      name: error?.name
+    })
+    
+    // Check for Prisma connection errors
+    if (error?.code === 'P1001' || error?.message?.includes('Can\'t reach database') || error?.message?.includes('MaxClientsInSessionMode')) {
+      return NextResponse.json(
+        { error: 'Ошибка подключения к базе данных. Попробуйте позже.' },
+        { status: 503 }
+      )
     }
+    
     return NextResponse.json(
-      { error: 'Ошибка получения игры' },
+      { error: error?.message || 'Ошибка получения игры' },
       { status: 500 }
     )
   }
