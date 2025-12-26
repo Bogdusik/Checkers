@@ -58,6 +58,16 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
         body: JSON.stringify({ inviteId })
       })
       const data = await res.json()
+      
+      if (!res.ok) {
+        // Server returned an error status
+        toastManager.error(data.error || 'Ошибка принятия приглашения')
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Accept invite error:', data.error, 'Status:', res.status)
+        }
+        return
+      }
+      
       if (data.game) {
         // Remove accepted invite
         setInvites(prev => prev.filter(inv => inv.id !== inviteId))
@@ -67,7 +77,9 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
         toastManager.error(data.error || 'Ошибка принятия приглашения')
       }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error accepting invite:', error)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error accepting invite:', error)
+      }
       toastManager.error('Ошибка принятия приглашения')
     }
   }
