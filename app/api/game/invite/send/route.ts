@@ -75,12 +75,36 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ invite })
-  } catch (error) {
+  } catch (error: any) {
+    // Log detailed error for debugging
     if (process.env.NODE_ENV === 'development') {
       console.error('Error sending invite:', error)
+      console.error('Error details:', {
+        message: error?.message,
+        code: error?.code,
+        meta: error?.meta,
+        name: error?.name
+      })
     }
+    
+    // Check for Prisma connection errors
+    if (error?.code === 'P1001' || error?.message?.includes('Can\'t reach database') || error?.message?.includes('MaxClientsInSessionMode')) {
+      return NextResponse.json(
+        { error: 'Ошибка подключения к базе данных. Попробуйте позже.' },
+        { status: 503 }
+      )
+    }
+    
+    // Check for Prisma unique constraint violation (shouldn't happen now, but handle it)
+    if (error?.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Приглашение уже существует. Попробуйте позже.' },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Ошибка отправки приглашения' },
+      { error: error?.message || 'Ошибка отправки приглашения' },
       { status: 500 }
     )
   }
