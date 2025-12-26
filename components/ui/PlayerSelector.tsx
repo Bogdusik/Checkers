@@ -58,30 +58,18 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
   }
 
   const handleInvite = async (playerId: string) => {
-    if (!playerId) {
-      console.error('handleInvite called with invalid playerId:', playerId)
-      toastManager.error('Ошибка: не указан игрок')
-      return
-    }
+    if (!playerId) return
 
     try {
-      const requestBody = { toUserId: playerId }
-      console.log('Sending invite to:', playerId, 'Body:', requestBody)
-      
       const res = await fetch('/api/game/invite/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({ toUserId: playerId })
       })
-      
       const data = await res.json()
-      console.log('Invite response:', { status: res.status, data })
       
       if (!res.ok) {
-        // Server returned an error status
-        const errorMessage = data.error || 'Ошибка отправки приглашения'
-        console.error('Send invite error:', errorMessage, 'Status:', res.status)
-        toastManager.error(errorMessage)
+        toastManager.error(data.error || 'Ошибка отправки приглашения')
         return
       }
       
@@ -89,12 +77,10 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
         toastManager.success(`Приглашение отправлено ${data.invite.toUser?.username || 'игроку'}`)
         onClose()
       } else {
-        console.error('No invite in response:', data)
         toastManager.error(data.error || 'Ошибка отправки приглашения')
       }
-    } catch (error: any) {
-      console.error('Error sending invite:', error)
-      toastManager.error('Ошибка подключения. Проверьте интернет-соединение.')
+    } catch (error) {
+      toastManager.error('Ошибка подключения')
     }
   }
 

@@ -3,11 +3,9 @@ import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { schemas, validateRequest } from '@/lib/validation'
 import { handleError, NotFoundError, AuthenticationError, AuthorizationError } from '@/lib/errors'
-import { withRateLimit } from '@/lib/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
-// Get messages
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -18,46 +16,24 @@ export async function GET(
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    const game = await prisma.game.findUnique({
-      where: { id: params.id }
-    })
-
-    if (!game) {
-      return NextResponse.json({ error: 'Игра не найдена' }, { status: 404 })
-    }
-
-    // Check if user is part of this game
-    if (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id)) {
+    const game = await prisma.game.findUnique({ where: { id: params.id } })
+    if (!game || (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id))) {
       return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
     }
 
     const messages = await prisma.gameMessage.findMany({
       where: { gameId: params.id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true
-          }
-        }
-      },
+      include: { user: { select: { id: true, username: true } } },
       orderBy: { createdAt: 'asc' },
       take: 100
     })
 
     return NextResponse.json({ messages })
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching messages:', error)
-    }
-    return NextResponse.json(
-      { error: 'Ошибка получения сообщений' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ошибка получения сообщений' }, { status: 500 })
   }
 }
 
-// Send message
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -68,45 +44,25 @@ export async function POST(
       throw new AuthenticationError()
     }
 
-    const body = await request.json()
-    const { message } = validateRequest(schemas.chatMessage, body)
-
-    const game = await prisma.game.findUnique({
-      where: { id: params.id }
-    })
+    const { message } = validateRequest(schemas.chatMessage, await request.json())
+    const game = await prisma.game.findUnique({ where: { id: params.id } })
 
     if (!game) {
       throw new NotFoundError('Игра не найдена')
     }
 
-    // Check if user is part of this game
     if (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id)) {
       throw new AuthorizationError()
     }
 
     const newMessage = await prisma.gameMessage.create({
-      data: {
-        gameId: params.id,
-        userId: user.id,
-        message: message.trim()
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true
-          }
-        }
-      }
+      data: { gameId: params.id, userId: user.id, message: message.trim() },
+      include: { user: { select: { id: true, username: true } } }
     })
 
     return NextResponse.json({ message: newMessage })
   } catch (error) {
     const errorResponse = handleError(error)
-    return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.statusCode }
-    )
+    return NextResponse.json({ error: errorResponse.message }, { status: errorResponse.statusCode })
   }
 }
-

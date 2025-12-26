@@ -11,40 +11,29 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, username, password } = registerSchema.parse(body)
+    const { email, username, password } = registerSchema.parse(await request.json())
 
-    // Check if user exists
     const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [{ email }, { username }]
-      }
+      where: { OR: [{ email }, { username }] }
     })
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'Email или username уже используется' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Email или username уже используется' }, { status: 400 })
     }
 
-    // Create user
     const hashedPassword = await hashPassword(password)
-    // Make bogdyn13@gmail.com admin
     const isAdmin = email === 'bogdyn13@gmail.com'
+    
     const user = await prisma.user.create({
       data: {
         email,
         username,
         password: hashedPassword,
         isAdmin,
-        statistics: {
-          create: {}
-        }
+        statistics: { create: {} }
       }
     })
 
-    // Generate token
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -65,50 +54,21 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
+      maxAge: 60 * 60 * 24 * 7
     })
 
     return response
   } catch (error: any) {
-    // Log error for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Register error:', error)
-      console.error('Error details:', {
-        message: error?.message,
-        code: error?.code,
-        meta: error?.meta,
-        name: error?.name
-      })
-    }
-    
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Неверные данные', details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Неверные данные' }, { status: 400 })
     }
-    
-    // Check for Prisma unique constraint violation (email/username already exists)
     if (error?.code === 'P2002') {
       const field = error?.meta?.target?.[0] || 'поле'
-      return NextResponse.json(
-        { error: `${field === 'email' ? 'Email' : 'Username'} уже используется` },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: `${field === 'email' ? 'Email' : 'Username'} уже используется` }, { status: 400 })
     }
-    
-    // Check for Prisma connection errors
-    if (error?.code === 'P1001' || error?.message?.includes('Can\'t reach database') || error?.message?.includes('MaxClientsInSessionMode')) {
-      return NextResponse.json(
-        { error: 'Ошибка подключения к базе данных. Попробуйте позже.' },
-        { status: 503 }
-      )
+    if (error?.code === 'P1001') {
+      return NextResponse.json({ error: 'Ошибка подключения к БД' }, { status: 503 })
     }
-    
-    return NextResponse.json(
-      { error: error?.message || 'Ошибка регистрации. Попробуйте позже.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ошибка регистрации' }, { status: 500 })
   }
 }
-

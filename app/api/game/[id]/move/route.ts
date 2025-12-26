@@ -18,19 +18,6 @@ export async function POST(
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    // Update user's lastLoginAt to track online status (non-blocking, throttled)
-    // Only update 10% of requests to reduce database load
-    if (Math.random() < 0.1) {
-      prisma.user.update({
-        where: { id: user.id },
-        data: { lastLoginAt: new Date() }
-      }).catch((updateError) => {
-        // Silently fail - this is non-critical
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Failed to update lastLoginAt:', updateError)
-        }
-      })
-    }
 
     const body = await request.json()
     const { from, to } = body
@@ -222,21 +209,12 @@ export async function POST(
         status: gameStatus
       })
     } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Move validation error:', error)
-      }
-      return NextResponse.json(
-        { error: 'Неверный ход: ' + (error.message || 'Неизвестная ошибка') },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Неверный ход' }, { status: 400 })
     }
-  } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error making move:', error)
+  } catch (error: any) {
+    if (error?.code === 'P1001') {
+      return NextResponse.json({ error: 'Ошибка подключения к БД' }, { status: 503 })
     }
-    return NextResponse.json(
-      { error: 'Ошибка выполнения хода' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ошибка выполнения хода' }, { status: 500 })
   }
 }
