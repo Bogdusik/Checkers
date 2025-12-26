@@ -145,9 +145,18 @@ export async function POST(request: NextRequest) {
     
     // Check for specific Prisma errors
     if (error?.code === 'P2002') {
+      // Unique constraint violation - this shouldn't happen now, but handle it gracefully
       return NextResponse.json(
-        { error: 'Игра с такими игроками уже существует' },
+        { error: 'Ошибка обновления приглашения. Попробуйте еще раз.' },
         { status: 400 }
+      )
+    }
+    
+    // Check for Prisma connection errors
+    if (error?.code === 'P1001' || error?.message?.includes('Can\'t reach database') || error?.message?.includes('MaxClientsInSessionMode')) {
+      return NextResponse.json(
+        { error: 'Ошибка подключения к базе данных. Попробуйте позже.' },
+        { status: 503 }
       )
     }
     
