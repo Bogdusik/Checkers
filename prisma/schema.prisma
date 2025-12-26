@@ -133,8 +133,11 @@ model GameInvite {
   updatedAt     DateTime @updatedAt
   expiresAt     DateTime
   
-  @@unique([fromUserId, toUserId, status])
+  // Unique constraint: only one PENDING invite between two users at a time
+  // Note: We allow multiple invites with different statuses (e.g., one PENDING and one ACCEPTED)
+  // The code enforces that there can't be two PENDING invites between the same users
   @@index([toUserId, status])
+  @@index([fromUserId, toUserId])
 }
 
 model Friend {

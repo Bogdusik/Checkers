@@ -35,19 +35,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Приглашение уже обработано' }, { status: 400 })
     }
 
-    // Decline invite
-    await prisma.gameInvite.update({
-      where: { id: inviteId },
-      data: { status: 'DECLINED' }
-    })
+    // Decline invite - use transaction to handle potential race conditions
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Double-check invite status
+        const currentInvite = await tx.gameInvite.findUnique({
+          where: { id: inviteId }
+        })
 
-    return NextResponse.json({ success: true })
-  } catch (error) {
+        if (!currentInvite) {
+          throw new Error('Приглашение не найдено')
+        }
+
+        if (currentInvite.status !== 'PENDING') {
+          throw new Error('Приглашение уже обработано')
+        }
+
+        if (currentInvite.toUserId !== user.id) {
+          throw new Error('Нет доступа')
+        }
+
+        // Update status - this should work now without unique constraint error
+        await tx.gameInvite.update({
+          where: { id: inviteId },
+          data: { status: 'DECLINED' }
+        })
+      })
+
+      return NextResponse.json({ success: true })
+    } catch (txError: any) {
+      // If transaction fails, throw to outer catch
+      throw txError
+    }
+  } catch (error: any) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error declining invite:', error)
+      console.error('Error details:', {
+        message: error?.message,
+        code: error?.code,
+        meta: error?.meta
+      })
     }
+    
+    // Check for specific Prisma errors
+    if (error?.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Ошибка обновления приглашения. Попробуйте еще раз.' },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Ошибка отклонения приглашения' },
+      { error: error?.message || 'Ошибка отклонения приглашения' },
       { status: 500 }
     )
   }
