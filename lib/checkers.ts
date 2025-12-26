@@ -62,13 +62,20 @@ const isValidSquare = (col: number, row: number): boolean => {
   return col >= 0 && col < 8 && row >= 1 && row <= 8
 }
 
-const getDirections = (piece: Piece): number[][] => {
+// Get directions for regular moves (forward only for men)
+const getMoveDirections = (piece: Piece): number[][] => {
   if (piece.type === 'king') {
     return [[-1, -1], [-1, 1], [1, -1], [1, 1]]
   }
   return piece.color === 'white' 
     ? [[-1, 1], [1, 1]]   // White moves up
     : [[-1, -1], [1, -1]] // Black moves down
+}
+
+// Get directions for captures (all 4 directions for men when capturing)
+const getCaptureDirections = (piece: Piece): number[][] => {
+  // Both men and kings can capture in all 4 diagonal directions
+  return [[-1, -1], [-1, 1], [1, -1], [1, 1]]
 }
 
 /**
@@ -189,12 +196,26 @@ export function fenToGame(fen: string): CheckersGame {
   }
 }
 
+/**
+ * Represents a capture sequence (series of captures)
+ */
+interface CaptureSequence {
+  /** Final destination square after all captures */
+  finalSquare: Square
+  /** All squares where pieces were captured */
+  capturedSquares: Square[]
+  /** All intermediate squares visited during capture sequence */
+  path: Square[]
+  /** Row of final square (needed for promotion check) */
+  finalRow: number
+}
+
 // Check if there are any mandatory captures for the current player
 export function hasMandatoryCaptures(game: CheckersGame): boolean {
   for (const [square, piece] of game.board.entries()) {
     if (piece.color === game.currentPlayer) {
-      const captures = getCaptures(game, square)
-      if (captures.length > 0) {
+      const sequences = getAllCaptureSequences(game, square)
+      if (sequences.length > 0) {
         return true
       }
     }
@@ -205,11 +226,12 @@ export function hasMandatoryCaptures(game: CheckersGame): boolean {
 /**
  * Gets all valid moves for a piece on a given square
  * 
- * Enforces mandatory capture rule: if any captures are available, only captures are returned
+ * Enforces mandatory capture rule: if any captures are available, only captures are returned.
+ * Returns final destination squares after all possible capture sequences.
  * 
  * @param {CheckersGame} game - Current game state
  * @param {Square} square - Square to get moves for
- * @returns {Square[]} Array of valid destination squares
+ * @returns {Square[]} Array of valid destination squares (final positions after captures)
  * @example
  * const game = createNewGame()
  * const moves = getValidMoves(game, 'd2')
@@ -221,18 +243,19 @@ export function getValidMoves(game: CheckersGame, square: Square): Square[] {
     return []
   }
   
-  const [col, row] = squareToCoords(square)
-  const captures = getCaptures(game, square)
   const hasAnyCaptures = hasMandatoryCaptures(game)
   
-  // If there are mandatory captures, only allow captures
+  // If there are mandatory captures, only return capture sequences
   if (hasAnyCaptures) {
-    return captures
+    const sequences = getAllCaptureSequences(game, square)
+    // Return only final destination squares
+    return sequences.map(seq => seq.finalSquare)
   }
   
   // Regular moves (only if no mandatory captures exist)
   const moves: Square[] = []
-  const directions = getDirections(piece)
+  const [col, row] = squareToCoords(square)
+  const directions = getMoveDirections(piece)
   
   directions.forEach(([dc, dr]) => {
     if (piece.type === 'king') {
@@ -263,31 +286,73 @@ export function getValidMoves(game: CheckersGame, square: Square): Square[] {
     }
   })
   
-  // Add captures if no mandatory captures (optional captures)
-  captures.forEach(capture => {
-    if (!moves.includes(capture)) {
-      moves.push(capture)
-    }
-  })
-  
   return moves
 }
 
-// Get capture moves (single-level captures, not recursive)
-function getCaptures(game: CheckersGame, square: Square): Square[] {
+/**
+ * Get all possible capture sequences from a given square
+ * This includes single captures and multiple captures (series)
+ * Returns only maximal sequences (those that cannot be continued)
+ * 
+ * @param {CheckersGame} game - Current game state
+ * @param {Square} square - Starting square
+ * @returns {CaptureSequence[]} Array of all possible maximal capture sequences
+ */
+function getAllCaptureSequences(game: CheckersGame, square: Square): CaptureSequence[] {
   const piece = game.board.get(square)
   if (!piece) return []
   
-  const [col, row] = squareToCoords(square)
-  const captures: Square[] = []
-  const directions = getDirections(piece)
+  const sequences: CaptureSequence[] = []
+  const board = new Map(game.board)
   
+  // Recursively find all capture sequences
+  findCaptureSequencesRecursive(
+    board,
+    square,
+    piece,
+    [],
+    [square],
+    sequences
+  )
+  
+  // Filter to only maximal sequences (those with most captures)
+  if (sequences.length === 0) return []
+  
+  const maxCaptures = Math.max(...sequences.map(seq => seq.capturedSquares.length))
+  return sequences.filter(seq => seq.capturedSquares.length === maxCaptures)
+}
+
+/**
+ * Recursively find all capture sequences from a position
+ * 
+ * @param {Map<Square, Piece>} board - Current board state (modified during recursion)
+ * @param {Square} currentSquare - Current position
+ * @param {Piece} piece - Piece making the capture
+ * @param {Square[]} capturedSquares - Squares where pieces were captured so far
+ * @param {Square[]} path - Path taken so far (including current square)
+ * @param {CaptureSequence[]} sequences - Accumulator for all sequences found
+ */
+function findCaptureSequencesRecursive(
+  board: Map<Square, Piece>,
+  currentSquare: Square,
+  piece: Piece,
+  capturedSquares: Square[],
+  path: Square[],
+  sequences: CaptureSequence[]
+): void {
+  const [col, row] = squareToCoords(currentSquare)
+  const directions = getCaptureDirections(piece)
+  let foundAnyCapture = false
+  
+  // Check all directions for possible captures
   directions.forEach(([dc, dr]) => {
     if (piece.type === 'king') {
-      // Kings: find first enemy piece, then check if we can jump over it
+      // King capture: find first enemy piece, then check all landing squares after it
       let foundEnemy = false
       let enemySquare: Square | null = null
       
+      // First, find the first enemy piece in this direction
+      // Path to enemy must be completely clear (all squares empty)
       for (let distance = 1; distance < 8; distance++) {
         const checkCol = col + dc * distance
         const checkRow = row + dr * distance
@@ -295,36 +360,84 @@ function getCaptures(game: CheckersGame, square: Square): Square[] {
         
         if (isDarkSquare(checkRow - 1, checkCol)) {
           const checkSquare = coordsToSquare(checkCol, checkRow)
-          const checkPiece = game.board.get(checkSquare)
+          const checkPiece = board.get(checkSquare)
           
           if (checkPiece) {
-            if (checkPiece.color !== piece.color && !foundEnemy) {
+            if (checkPiece.color !== piece.color && !foundEnemy && !capturedSquares.includes(checkSquare)) {
+              // Found first enemy piece - path before it must be clear (which we've verified by reaching here)
               foundEnemy = true
               enemySquare = checkSquare
             } else {
-              break // Hit own piece or second piece
+              // Hit own piece, already captured piece, or second piece - stop searching
+              // (In Russian checkers, king cannot jump over two pieces in one jump)
+              break
             }
           }
+          // If square is empty, continue searching (path is clear so far)
         } else {
           break
         }
       }
       
-      // Check if we can jump over the enemy
+      // If we found an enemy, check all possible landing squares after it
       if (foundEnemy && enemySquare) {
         const [enemyCol, enemyRow] = squareToCoords(enemySquare)
-        const jumpCol = enemyCol + dc
-        const jumpRow = enemyRow + dr
         
-        if (isValidSquare(jumpCol, jumpRow) && isDarkSquare(jumpRow - 1, jumpCol)) {
-          const jumpSquare = coordsToSquare(jumpCol, jumpRow)
-          if (!game.board.has(jumpSquare)) {
-            captures.push(jumpSquare)
+        // Check all squares after the enemy piece
+        for (let jumpDist = 1; jumpDist < 8; jumpDist++) {
+          const jumpCol = enemyCol + dc * jumpDist
+          const jumpRow = enemyRow + dr * jumpDist
+          if (!isValidSquare(jumpCol, jumpRow)) break
+          
+          if (isDarkSquare(jumpRow - 1, jumpCol)) {
+            const jumpSquare = coordsToSquare(jumpCol, jumpRow)
+            
+            // Check if path from current to jump square is clear (except for the enemy)
+            let pathClear = true
+            for (let i = 1; i < jumpDist; i++) {
+              const pathCol = enemyCol + dc * i
+              const pathRow = enemyRow + dr * i
+              const pathSquare = coordsToSquare(pathCol, pathRow)
+              
+              if (board.has(pathSquare)) {
+                pathClear = false
+                break
+              }
+            }
+            
+            // Final square must be empty
+            if (pathClear && !board.has(jumpSquare)) {
+              // Valid capture found
+              foundAnyCapture = true
+              
+              // Create new board state for recursion
+              const newBoard = new Map(board)
+              newBoard.delete(enemySquare)
+              newBoard.delete(currentSquare)
+              
+              // IMPORTANT: In Russian checkers, promotion happens ONLY after the entire move is complete
+              // During the capture chain, the piece remains as it was (man stays man, king stays king)
+              // We'll check promotion only at the end of the sequence
+              const newPiece: Piece = { color: piece.color, type: piece.type }
+              newBoard.set(jumpSquare, newPiece)
+              
+              // Recursively find more captures from this position
+              findCaptureSequencesRecursive(
+                newBoard,
+                jumpSquare,
+                newPiece,
+                [...capturedSquares, enemySquare],
+                [...path, jumpSquare],
+                sequences
+              )
+            }
+          } else {
+            break
           }
         }
       }
     } else {
-      // Regular pieces: jump one square
+      // Regular piece capture: jump one square over enemy
       const jumpCol = col + dc * 2
       const jumpRow = row + dr * 2
       const middleCol = col + dc
@@ -333,47 +446,104 @@ function getCaptures(game: CheckersGame, square: Square): Square[] {
       if (isValidSquare(jumpCol, jumpRow) && isDarkSquare(jumpRow - 1, jumpCol)) {
         const middleSquare = coordsToSquare(middleCol, middleRow)
         const jumpSquare = coordsToSquare(jumpCol, jumpRow)
-        const middlePiece = game.board.get(middleSquare)
+        const middlePiece = board.get(middleSquare)
         
-        if (middlePiece && middlePiece.color !== piece.color && !game.board.has(jumpSquare)) {
-          captures.push(jumpSquare)
+        if (middlePiece && 
+            middlePiece.color !== piece.color && 
+            !board.has(jumpSquare) &&
+            !capturedSquares.includes(middleSquare)) {
+          // Valid capture found
+          foundAnyCapture = true
+          
+          // Create new board state for recursion
+          const newBoard = new Map(board)
+          newBoard.delete(middleSquare)
+          newBoard.delete(currentSquare)
+          
+          // IMPORTANT: In Russian checkers, promotion happens ONLY after the entire move is complete
+          // During the capture chain, the piece remains as it was (man stays man)
+          // We'll check promotion only at the end of the sequence
+          const newPiece: Piece = { color: piece.color, type: piece.type }
+          newBoard.set(jumpSquare, newPiece)
+          
+          // Recursively find more captures from this position
+          findCaptureSequencesRecursive(
+            newBoard,
+            jumpSquare,
+            newPiece,
+            [...capturedSquares, middleSquare],
+            [...path, jumpSquare],
+            sequences
+          )
         }
       }
     }
   })
   
-  return captures
+  // If no more captures possible, this is a complete sequence
+  if (!foundAnyCapture && capturedSquares.length > 0) {
+    const [finalCol, finalRow] = squareToCoords(currentSquare)
+    sequences.push({
+      finalSquare: currentSquare,
+      capturedSquares: [...capturedSquares],
+      path: [...path], // path already includes currentSquare
+      finalRow: finalRow
+    })
+  }
 }
 
-// Execute a single capture move (helper for makeMove)
-function executeCapture(board: Map<Square, Piece>, from: Square, to: Square, piece: Piece): void {
+/**
+ * Execute a complete capture sequence
+ * 
+ * @param {Map<Square, Piece>} board - Board to modify
+ * @param {Square} from - Starting square
+ * @param {Square} to - Final destination square
+ * @param {Piece} piece - Piece making the capture
+ * @returns {Square[]} Array of squares where pieces were captured
+ */
+function executeCaptureSequence(
+  board: Map<Square, Piece>,
+  from: Square,
+  to: Square,
+  piece: Piece
+): Square[] {
+  const capturedSquares: Square[] = []
   const [fromCol, fromRow] = squareToCoords(from)
   const [toCol, toRow] = squareToCoords(to)
-  const colDiff = toCol - fromCol
-  const rowDiff = toRow - fromRow
   
   if (piece.type === 'king') {
     // King captures: remove all enemy pieces between from and to
-    const colStep = colDiff > 0 ? 1 : -1
-    const rowStep = rowDiff > 0 ? 1 : -1
-    const distance = Math.abs(colDiff)
+    const colStep = toCol > fromCol ? 1 : -1
+    const rowStep = toRow > fromRow ? 1 : -1
+    const distance = Math.max(Math.abs(toCol - fromCol), Math.abs(toRow - fromRow))
     
     for (let i = 1; i < distance; i++) {
       const checkCol = fromCol + colStep * i
       const checkRow = fromRow + rowStep * i
+      if (!isValidSquare(checkCol, checkRow)) break
+      
       const checkSquare = coordsToSquare(checkCol, checkRow)
       const checkPiece = board.get(checkSquare)
       
       if (checkPiece && checkPiece.color !== piece.color) {
         board.delete(checkSquare)
+        capturedSquares.push(checkSquare)
       }
     }
   } else {
     // Regular piece: capture is always one square away
     const middleCol = (fromCol + toCol) / 2
     const middleRow = (fromRow + toRow) / 2
-    board.delete(coordsToSquare(middleCol, middleRow))
+    const middleSquare = coordsToSquare(middleCol, middleRow)
+    const middlePiece = board.get(middleSquare)
+    
+    if (middlePiece && middlePiece.color !== piece.color) {
+      board.delete(middleSquare)
+      capturedSquares.push(middleSquare)
+    }
   }
+  
+  return capturedSquares
 }
 
 // Check if piece can promote to king
@@ -388,12 +558,12 @@ function checkPromotion(piece: Piece, row: number): PieceType {
 /**
  * Makes a move in the game
  * 
- * Validates the move, executes captures if needed, promotes pieces to kings,
- * and checks for game over conditions (no pieces left or no valid moves)
+ * Validates the move, executes captures if needed (including multiple captures),
+ * promotes pieces to kings, and checks for game over conditions.
  * 
  * @param {CheckersGame} game - Current game state
  * @param {Square} from - Source square
- * @param {Square} to - Destination square
+ * @param {Square} to - Destination square (final position after all captures)
  * @returns {{ success: boolean; newGame: CheckersGame }} Result with success flag and new game state
  * @example
  * const game = createNewGame()
@@ -414,22 +584,74 @@ export function makeMove(game: CheckersGame, from: Square, to: Square): { succes
   }
   
   const newBoard = new Map(game.board)
-  newBoard.delete(from)
-  
   const [toCol, toRow] = squareToCoords(to)
   const [fromCol, fromRow] = squareToCoords(from)
   const isCapture = Math.abs(toCol - fromCol) >= 2 || Math.abs(toRow - fromRow) >= 2
   
-  // Execute capture if needed
+  // Find the capture sequence that leads to this destination
+  let finalPiece = piece
+  let currentSquare = from
+  
   if (isCapture) {
-    executeCapture(newBoard, from, to, piece)
+    // Find the capture sequence that ends at 'to'
+    const sequences = getAllCaptureSequences(game, from)
+    const matchingSequence = sequences.find(seq => seq.finalSquare === to)
+    
+    if (matchingSequence && matchingSequence.path.length > 1) {
+      // Execute the entire capture sequence step by step
+      const path = matchingSequence.path
+      
+      for (let i = 0; i < path.length - 1; i++) {
+        const fromSquare = path[i]
+        const toSquare = path[i + 1]
+        const currentPiece = newBoard.get(fromSquare) || piece
+        
+        // Execute capture for this step
+        executeCaptureSequence(newBoard, fromSquare, toSquare, currentPiece)
+        newBoard.delete(fromSquare)
+        
+        // IMPORTANT: During capture chain, piece type does NOT change
+        // Promotion happens only after the entire move is complete
+        finalPiece = {
+          color: currentPiece.color,
+          type: currentPiece.type // Keep original type during chain
+        }
+        
+        // Place piece at intermediate position (still as man, not king)
+        newBoard.set(toSquare, finalPiece)
+        currentSquare = toSquare
+      }
+      
+      // NOW check for promotion - only after the entire capture sequence is complete
+      finalPiece = {
+        color: piece.color,
+        type: checkPromotion(piece, matchingSequence.finalRow)
+      }
+      newBoard.set(to, finalPiece)
+    } else {
+      // Fallback: single capture (shouldn't happen if sequences are found correctly)
+      executeCaptureSequence(newBoard, from, to, piece)
+      newBoard.delete(from)
+      finalPiece = {
+        color: piece.color,
+        type: checkPromotion(piece, toRow)
+      }
+      newBoard.set(to, finalPiece)
+    }
+  } else {
+    // Regular move (no capture)
+    newBoard.delete(from)
+    finalPiece = {
+      color: piece.color,
+      type: checkPromotion(piece, toRow)
+    }
+    newBoard.set(to, finalPiece)
   }
   
-  // Check for promotion
-  const newType = checkPromotion(piece, toRow)
-  
-  // Place piece at destination
-  newBoard.set(to, { color: piece.color, type: newType })
+  // Note: In Russian checkers, if a piece becomes a king after completing a capture sequence,
+  // the move is complete. The piece cannot continue capturing in the same move after promotion.
+  // All possible capture sequences (including those where piece becomes king) are already
+  // calculated in getAllCaptureSequences, which returns only maximal sequences.
   
   // Check for game over (no pieces left or no valid moves)
   const opponentColor = game.currentPlayer === 'white' ? 'black' : 'white'
@@ -454,6 +676,11 @@ export function makeMove(game: CheckersGame, from: Square, to: Square): { succes
   } else {
     winner = game.currentPlayer
   }
+  
+  // If there are more captures possible, player must continue (don't switch turns)
+  // But in Russian checkers, if a piece becomes a king during capture, it can continue
+  // For now, we'll switch turns after a capture sequence completes
+  // (This can be enhanced later to require continuing captures)
   
   const newGame: CheckersGame = {
     board: newBoard,
