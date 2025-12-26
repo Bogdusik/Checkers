@@ -42,14 +42,22 @@ export async function getUserFromRequest(request: NextRequest): Promise<TokenPay
 }
 
 export async function getCurrentUser(request: NextRequest) {
-  const tokenPayload = await getUserFromRequest(request)
-  if (!tokenPayload) return null
-  
-  const user = await prisma.user.findUnique({
-    where: { id: tokenPayload.userId },
-    include: { statistics: true }
-  })
-  
-  return user
+  try {
+    const tokenPayload = await getUserFromRequest(request)
+    if (!tokenPayload) return null
+    
+    const user = await prisma.user.findUnique({
+      where: { id: tokenPayload.userId },
+      include: { statistics: true }
+    })
+    
+    return user
+  } catch (error) {
+    // Log error but don't throw - return null to indicate user is not authenticated
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error in getCurrentUser:', error)
+    }
+    return null
+  }
 }
 
