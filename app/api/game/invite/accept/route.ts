@@ -37,8 +37,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Приглашение не найдено' }, { status: 404 })
     }
 
+    // Check if user is the recipient of the invite
+    // Only the person who received the invite can accept it
     if (invite.toUserId !== user.id) {
-      return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
+      return NextResponse.json({ 
+        error: 'Вы не можете принять это приглашение. Только получатель может принять приглашение.' 
+      }, { status: 403 })
     }
 
     if (invite.status !== 'PENDING') {
@@ -54,57 +58,101 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Приглашение истекло' }, { status: 400 })
     }
 
-    // Create game
-    const checkersGame = createNewGame()
-    const initialFen = gameToFen(checkersGame)
+    // Use transaction to ensure atomicity
+    const result = await prisma.$transaction(async (tx) => {
+      // Double-check invite status (prevent race condition)
+      const currentInvite = await tx.gameInvite.findUnique({
+        where: { id: inviteId }
+      })
 
-    // Randomly assign colors for fairness
-    const isUserWhite = Math.random() < 0.5
-    const whitePlayerId = isUserWhite ? user.id : invite.fromUserId
-    const blackPlayerId = isUserWhite ? invite.fromUserId : user.id
+      if (!currentInvite) {
+        throw new Error('Приглашение не найдено')
+      }
 
-    const game = await prisma.game.create({
-      data: {
-        whitePlayerId,
-        blackPlayerId,
-        status: 'IN_PROGRESS',
-        startedAt: new Date(),
-        fen: initialFen
-      },
-      include: {
-        whitePlayer: {
-          select: {
-            id: true,
-            username: true,
-            email: true
-          }
+      if (currentInvite.status !== 'PENDING') {
+        throw new Error('Приглашение уже обработано')
+      }
+
+      if (currentInvite.toUserId !== user.id) {
+        throw new Error('Вы не можете принять это приглашение')
+      }
+
+      // Create game
+      const checkersGame = createNewGame()
+      const initialFen = gameToFen(checkersGame)
+
+      // Randomly assign colors for fairness
+      const isUserWhite = Math.random() < 0.5
+      const whitePlayerId = isUserWhite ? user.id : invite.fromUserId
+      const blackPlayerId = isUserWhite ? invite.fromUserId : user.id
+
+      // Ensure players are different
+      if (whitePlayerId === blackPlayerId) {
+        throw new Error('Нельзя играть с самим собой')
+      }
+
+      const game = await tx.game.create({
+        data: {
+          whitePlayerId,
+          blackPlayerId,
+          status: 'IN_PROGRESS',
+          startedAt: new Date(),
+          fen: initialFen
         },
-        blackPlayer: {
-          select: {
-            id: true,
-            username: true,
-            email: true
+        include: {
+          whitePlayer: {
+            select: {
+              id: true,
+              username: true,
+              email: true
+            }
+          },
+          blackPlayer: {
+            select: {
+              id: true,
+              username: true,
+              email: true
+            }
           }
         }
-      }
+      })
+
+      // Update invite
+      await tx.gameInvite.update({
+        where: { id: inviteId },
+        data: {
+          status: 'ACCEPTED',
+          gameId: game.id
+        }
+      })
+
+      return game
     })
 
-    // Update invite
-    await prisma.gameInvite.update({
-      where: { id: inviteId },
-      data: {
-        status: 'ACCEPTED',
-        gameId: game.id
-      }
-    })
+    const game = result
 
     return NextResponse.json({ game, inviteId })
-  } catch (error) {
+  } catch (error: any) {
+    // Log detailed error in development
     if (process.env.NODE_ENV === 'development') {
       console.error('Error accepting invite:', error)
+      console.error('Error details:', {
+        message: error?.message,
+        code: error?.code,
+        meta: error?.meta
+      })
     }
+    
+    // Check for specific Prisma errors
+    if (error?.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'Игра с такими игроками уже существует' },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Ошибка принятия приглашения' },
+      { error: error?.message || 'Ошибка принятия приглашения' },
       { status: 500 }
     )
   }
