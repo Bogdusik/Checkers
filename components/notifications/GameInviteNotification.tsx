@@ -52,6 +52,7 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
 
   const handleAccept = async (inviteId: string) => {
     try {
+      console.log('Accepting invite:', inviteId, 'User ID:', userId)
       const res = await fetch('/api/game/invite/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,12 +60,13 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
       })
       const data = await res.json()
       
+      console.log('Accept invite response:', { status: res.status, data })
+      
       if (!res.ok) {
         // Server returned an error status
-        toastManager.error(data.error || 'Ошибка принятия приглашения')
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Accept invite error:', data.error, 'Status:', res.status)
-        }
+        const errorMessage = data.error || 'Ошибка принятия приглашения'
+        console.error('Accept invite error:', errorMessage, 'Status:', res.status)
+        toastManager.error(errorMessage)
         return
       }
       
@@ -74,13 +76,12 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
         // Navigate to game
         router.push(`/game?id=${data.game.id}`)
       } else {
+        console.error('No game in response:', data)
         toastManager.error(data.error || 'Ошибка принятия приглашения')
       }
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error accepting invite:', error)
-      }
-      toastManager.error('Ошибка принятия приглашения')
+    } catch (error: any) {
+      console.error('Error accepting invite:', error)
+      toastManager.error('Ошибка подключения. Проверьте интернет-соединение.')
     }
   }
 

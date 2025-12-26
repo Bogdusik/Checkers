@@ -166,9 +166,25 @@ function GameContent() {
         if (isMounted) {
           setLoading(false)
         }
-      } catch (error) {
+      } catch (error: any) {
         errorCount++
         pollInterval = Math.min(pollInterval * 1.5, maxInterval)
+        
+        // Handle network errors (TypeError: Load failed, Failed to fetch, etc.)
+        if (error instanceof TypeError || error?.message?.includes('Load failed') || error?.message?.includes('Failed to fetch')) {
+          if (errorCount <= 3) {
+            console.warn(`Network error fetching game (${errorCount}), retrying with ${pollInterval}ms interval:`, error.message)
+          }
+          // Continue polling with backoff for network errors
+          if (intervalId) {
+            clearInterval(intervalId)
+            intervalId = setInterval(fetchGame, pollInterval)
+          }
+          if (isMounted) {
+            setLoading(false)
+          }
+          return
+        }
         
         if (errorCount <= 3) {
           console.error('Error fetching game:', error)
