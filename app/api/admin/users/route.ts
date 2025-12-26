@@ -22,18 +22,11 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      orderBy: {
-        createdAt: 'desc'
-      }
+      orderBy: { createdAt: 'desc' }
     })
 
     return NextResponse.json({ users })
   } catch (error) {
-    console.error('Error fetching users:', error)
-    return NextResponse.json(
-      { error: 'Ошибка получения пользователей' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ошибка получения пользователей' }, { status: 500 })
   }
 }
-

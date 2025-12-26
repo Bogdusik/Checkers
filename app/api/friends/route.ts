@@ -2,34 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-const ONLINE_THRESHOLD_MS = 5 * 60 * 1000 // 5 минут для "online"
-
-const userSelect = {
-  id: true,
-  username: true,
-  email: true,
-  lastLoginAt: true,
-}
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000
 
 async function computePresence(userId: string) {
-  const now = Date.now()
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: userSelect,
+    select: { id: true, username: true, email: true, lastLoginAt: true }
   })
 
-  // Check if user is in an active game (IN_PROGRESS and not ended)
   const inGame = await prisma.game.findFirst({
     where: {
       status: 'IN_PROGRESS',
-      endedAt: null, // Game must not be ended
-      OR: [{ whitePlayerId: userId }, { blackPlayerId: userId }],
+      endedAt: null,
+      OR: [{ whitePlayerId: userId }, { blackPlayerId: userId }]
     },
-    select: { id: true },
+    select: { id: true }
   })
 
   const lastSeen = user?.lastLoginAt ? new Date(user.lastLoginAt).getTime() : 0
-  const isOnline = !!user?.lastLoginAt && now - lastSeen <= ONLINE_THRESHOLD_MS
+  const isOnline = !!user?.lastLoginAt && Date.now() - lastSeen <= ONLINE_THRESHOLD_MS
 
   return { user, isOnline, inGame: !!inGame }
 }
@@ -43,21 +34,14 @@ export async function GET(request: NextRequest) {
 
     const friends = await prisma.friend.findMany({
       where: {
-        OR: [
-          { requesterId: currentUser.id },
-          { addresseeId: currentUser.id },
-        ],
+        OR: [{ requesterId: currentUser.id }, { addresseeId: currentUser.id }]
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { updatedAt: 'desc' }
     })
 
-    const incoming = friends.filter(
-      (f) => f.status === 'PENDING' && f.addresseeId === currentUser.id
-    )
-    const outgoing = friends.filter(
-      (f) => f.status === 'PENDING' && f.requesterId === currentUser.id
-    )
-    const accepted = friends.filter((f) => f.status === 'ACCEPTED')
+    const incoming = friends.filter(f => f.status === 'PENDING' && f.addresseeId === currentUser.id)
+    const outgoing = friends.filter(f => f.status === 'PENDING' && f.requesterId === currentUser.id)
+    const accepted = friends.filter(f => f.status === 'ACCEPTED')
 
     const enrich = async (records: typeof friends) => {
       const result = []
@@ -73,7 +57,7 @@ export async function GET(request: NextRequest) {
             inGame: presence.inGame,
             requestedByMe: fr.requesterId === currentUser.id,
             createdAt: fr.createdAt,
-            acceptedAt: fr.acceptedAt,
+            acceptedAt: fr.acceptedAt
           })
         }
       }
@@ -83,16 +67,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       friends: await enrich(accepted),
       incoming: await enrich(incoming),
-      outgoing: await enrich(outgoing),
+      outgoing: await enrich(outgoing)
     })
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching friends:', error)
-    }
-    return NextResponse.json(
-      { error: 'Ошибка получения друзей' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ошибка получения друзей' }, { status: 500 })
   }
 }
 
@@ -103,17 +81,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { target } = body as { target?: string }
-
+    const { target } = await request.json() as { target?: string }
     if (!target) {
       return NextResponse.json({ error: 'Укажите email или username' }, { status: 400 })
     }
 
     const targetUser = await prisma.user.findFirst({
-      where: {
-        OR: [{ email: target }, { username: target }],
-      },
+      where: { OR: [{ email: target }, { username: target }] }
     })
 
     if (!targetUser) {
@@ -128,9 +102,9 @@ export async function POST(request: NextRequest) {
       where: {
         OR: [
           { requesterId: currentUser.id, addresseeId: targetUser.id },
-          { requesterId: targetUser.id, addresseeId: currentUser.id },
-        ],
-      },
+          { requesterId: targetUser.id, addresseeId: currentUser.id }
+        ]
+      }
     })
 
     if (existing) {
@@ -141,10 +115,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Пользователь уже в друзьях' }, { status: 400 })
       }
       if (existing.status === 'DECLINED') {
-        // Позволим повторно отправить, перезапишем статус
         const updated = await prisma.friend.update({
           where: { id: existing.id },
-          data: { status: 'PENDING', requesterId: currentUser.id, addresseeId: targetUser.id },
+          data: { status: 'PENDING', requesterId: currentUser.id, addresseeId: targetUser.id }
         })
         return NextResponse.json({ request: updated })
       }
@@ -154,19 +127,12 @@ export async function POST(request: NextRequest) {
       data: {
         requesterId: currentUser.id,
         addresseeId: targetUser.id,
-        status: 'PENDING',
-      },
+        status: 'PENDING'
+      }
     })
 
     return NextResponse.json({ request: created })
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error creating friend request:', error)
-    }
-    return NextResponse.json(
-      { error: 'Ошибка отправки заявки' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ошибка отправки заявки' }, { status: 500 })
   }
 }
-

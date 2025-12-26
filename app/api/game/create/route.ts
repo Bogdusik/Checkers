@@ -10,14 +10,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { opponentId } = body
-
-    // Create checkers game
+    const { opponentId } = await request.json()
     const checkersGame = createNewGame()
     const initialFen = gameToFen(checkersGame)
 
-    // Randomly assign colors for fairness (only if opponent is provided)
     let whitePlayerId = user.id
     let blackPlayerId = opponentId || user.id
     
@@ -27,7 +23,6 @@ export async function POST(request: NextRequest) {
       blackPlayerId = isUserWhite ? opponentId : user.id
     }
 
-    // Create game
     const game = await prisma.game.create({
       data: {
         whitePlayerId,
@@ -37,32 +32,13 @@ export async function POST(request: NextRequest) {
         fen: initialFen
       },
       include: {
-        whitePlayer: {
-          select: {
-            id: true,
-            username: true,
-            email: true
-          }
-        },
-        blackPlayer: {
-          select: {
-            id: true,
-            username: true,
-            email: true
-          }
-        }
+        whitePlayer: { select: { id: true, username: true, email: true } },
+        blackPlayer: { select: { id: true, username: true, email: true } }
       }
     })
 
     return NextResponse.json({ game })
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error creating game:', error)
-    }
-    return NextResponse.json(
-      { error: 'Ошибка создания игры' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ошибка создания игры' }, { status: 500 })
   }
 }
-

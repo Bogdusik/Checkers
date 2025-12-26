@@ -12,16 +12,8 @@ export async function GET(
       return new Response('Unauthorized', { status: 401 })
     }
 
-    // Verify user has access to this game
-    const game = await prisma.game.findUnique({
-      where: { id: params.id }
-    })
-
-    if (!game) {
-      return new Response('Game not found', { status: 404 })
-    }
-
-    if (game.whitePlayerId !== user.id && game.blackPlayerId !== user.id) {
+    const game = await prisma.game.findUnique({ where: { id: params.id } })
+    if (!game || (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id))) {
       return new Response('Forbidden', { status: 403 })
     }
 
@@ -31,13 +23,11 @@ export async function GET(
         const send = (data: any) => {
           try {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
-          } catch (err) {
-            // Client disconnected, close stream
+          } catch {
             controller.close()
           }
         }
 
-        // Send initial game state (trimmed fields)
         try {
           const gameData = await prisma.game.findUnique({
             where: { id: params.id },
@@ -61,56 +51,37 @@ export async function GET(
               fen: gameData.fen,
             })
           }
-        } catch (error: any) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Error loading initial game state:', error)
-          }
+        } catch {
           send({ type: 'error', message: 'Failed to load game' })
         }
 
-        // Poll for updates (small payload)
-        const interval: NodeJS.Timeout = setInterval(async () => {
+        const interval = setInterval(async () => {
           try {
             const gameData = await prisma.game.findUnique({
               where: { id: params.id },
               include: {
-                moves: {
-                  orderBy: { moveNumber: 'desc' },
-                  take: 1
-                }
+                moves: { orderBy: { moveNumber: 'desc' }, take: 1 }
               }
             })
 
-            if (gameData && gameData.moves.length > 0) {
-              const lastMove = gameData.moves[0]
+            if (gameData && gameData.moves && gameData.moves.length > 0) {
               send({
                 type: 'move',
-                move: lastMove.move,
+                move: gameData.moves[0].move,
                 fen: gameData.fen,
                 status: gameData.status
               })
             }
-          } catch (error: any) {
-            // Check for connection errors
-            if (error?.code === 'P1001' || error?.message?.includes('Can\'t reach database') || error?.message?.includes('MaxClientsInSessionMode')) {
-              send({ type: 'error', message: 'Database connection error' })
-              clearInterval(interval)
-              controller.close()
-              return
-            }
-            
-            if (process.env.NODE_ENV === 'development') {
-              console.error('Error polling game:', error)
-            }
-            // Don't close stream on transient errors, just log
+          } catch {
+            // Silently fail
           }
-        }, 1000) // Poll every second
+        }, 1000)
 
         request.signal.addEventListener('abort', () => {
           clearInterval(interval)
           try {
             controller.close()
-          } catch (err) {
+          } catch {
             // Already closed
           }
         })
@@ -125,16 +96,9 @@ export async function GET(
       },
     })
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error in stream endpoint:', error)
-    }
-    
-    // Check for connection errors
-    if (error?.code === 'P1001' || error?.message?.includes('Can\'t reach database') || error?.message?.includes('MaxClientsInSessionMode')) {
+    if (error?.code === 'P1001') {
       return new Response('Database connection error', { status: 503 })
     }
-    
     return new Response('Internal server error', { status: 500 })
   }
 }
-

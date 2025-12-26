@@ -10,38 +10,21 @@ const loginSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password } = loginSchema.parse(body)
-
-    // Find user
+    const { email, password } = loginSchema.parse(await request.json())
     const user = await prisma.user.findUnique({
       where: { email },
       include: { statistics: true }
     })
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Неверный email или пароль' },
-        { status: 401 }
-      )
+    if (!user || !(await verifyPassword(password, user.password))) {
+      return NextResponse.json({ error: 'Неверный email или пароль' }, { status: 401 })
     }
 
-    // Verify password
-    const isValid = await verifyPassword(password, user.password)
-    if (!isValid) {
-      return NextResponse.json(
-        { error: 'Неверный email или пароль' },
-        { status: 401 }
-      )
-    }
-
-    // Update last login
     await prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() }
     })
 
-    // Generate token
     const token = generateToken({
       userId: user.id,
       email: user.email,
@@ -63,41 +46,17 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
+      maxAge: 60 * 60 * 24 * 7
     })
 
     return response
   } catch (error: any) {
-    // Log error for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Login error:', error)
-      console.error('Error details:', {
-        message: error?.message,
-        code: error?.code,
-        name: error?.name,
-        stack: error?.stack
-      })
-    }
-    
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Неверные данные', details: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Неверные данные' }, { status: 400 })
     }
-    
-    // Check for Prisma connection errors
-    if (error?.code === 'P1001' || error?.message?.includes('Can\'t reach database')) {
-      return NextResponse.json(
-        { error: 'Ошибка подключения к базе данных. Попробуйте позже.' },
-        { status: 503 }
-      )
+    if (error?.code === 'P1001') {
+      return NextResponse.json({ error: 'Ошибка подключения к БД' }, { status: 503 })
     }
-    
-    return NextResponse.json(
-      { error: error?.message || 'Ошибка входа. Попробуйте позже.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ошибка входа' }, { status: 500 })
   }
 }
-
