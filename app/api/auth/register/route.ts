@@ -70,14 +70,43 @@ export async function POST(request: NextRequest) {
 
     return response
   } catch (error: any) {
+    // Log error for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Register error:', error)
+      console.error('Error details:', {
+        message: error?.message,
+        code: error?.code,
+        meta: error?.meta,
+        name: error?.name
+      })
+    }
+    
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Неверные данные', details: error.errors },
         { status: 400 }
       )
     }
+    
+    // Check for Prisma unique constraint violation (email/username already exists)
+    if (error?.code === 'P2002') {
+      const field = error?.meta?.target?.[0] || 'поле'
+      return NextResponse.json(
+        { error: `${field === 'email' ? 'Email' : 'Username'} уже используется` },
+        { status: 400 }
+      )
+    }
+    
+    // Check for Prisma connection errors
+    if (error?.code === 'P1001' || error?.message?.includes('Can\'t reach database') || error?.message?.includes('MaxClientsInSessionMode')) {
+      return NextResponse.json(
+        { error: 'Ошибка подключения к базе данных. Попробуйте позже.' },
+        { status: 503 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Ошибка регистрации' },
+      { error: error?.message || 'Ошибка регистрации. Попробуйте позже.' },
       { status: 500 }
     )
   }
