@@ -35,7 +35,8 @@ export default function LoginPage() {
       router.push('/')
       router.refresh()
     } catch (err) {
-      setError('Произошла ошибка')
+      console.error('Login fetch error:', err)
+      setError('Не удалось подключиться к серверу. Проверьте интернет-соединение.')
     } finally {
       setLoading(false)
     }

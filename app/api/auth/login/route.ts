@@ -68,14 +68,34 @@ export async function POST(request: NextRequest) {
 
     return response
   } catch (error: any) {
+    // Log error for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Login error:', error)
+      console.error('Error details:', {
+        message: error?.message,
+        code: error?.code,
+        name: error?.name,
+        stack: error?.stack
+      })
+    }
+    
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Неверные данные', details: error.errors },
         { status: 400 }
       )
     }
+    
+    // Check for Prisma connection errors
+    if (error?.code === 'P1001' || error?.message?.includes('Can\'t reach database')) {
+      return NextResponse.json(
+        { error: 'Ошибка подключения к базе данных. Попробуйте позже.' },
+        { status: 503 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Ошибка входа' },
+      { error: error?.message || 'Ошибка входа. Попробуйте позже.' },
       { status: 500 }
     )
   }
