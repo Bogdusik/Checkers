@@ -40,178 +40,72 @@ function GameContent() {
     if (!gameId || !user) return
 
     let isMounted = true
-    let errorCount = 0
-    let pollInterval = 500 // Start with 500ms
-    const maxInterval = 5000 // Max 5 seconds between polls
-    let intervalId: NodeJS.Timeout | null = null
+    let pollInterval = 1000
+    let intervalId: NodeJS.Timeout
 
     const fetchGame = async () => {
       if (!isMounted) return
       
       try {
-        const res = await fetch(`/api/game/${gameId}`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' }
-        })
-        
+        const res = await fetch(`/api/game/${gameId}`, { cache: 'no-store' })
         if (!isMounted) return
         
-        // Handle 401 - unauthorized, stop polling
         if (res.status === 401) {
-          console.error('Unauthorized access to game. Stopping polling.')
-          if (intervalId) {
-            clearInterval(intervalId)
-            intervalId = null
-          }
-          toastManager.error('Сессия истекла. Пожалуйста, войдите снова.')
+          clearInterval(intervalId)
           router.push('/login')
           return
         }
         
-        // Handle 403 - forbidden, stop polling
-        if (res.status === 403) {
-          console.error('Forbidden access to game. Stopping polling.')
-          if (intervalId) {
-            clearInterval(intervalId)
-            intervalId = null
-          }
-          toastManager.error('Нет доступа к этой игре')
+        if (res.status === 403 || res.status === 404) {
+          clearInterval(intervalId)
           router.push('/')
           return
         }
         
-        // Handle 404 - game not found, stop polling
-        if (res.status === 404) {
-          console.error('Game not found. Stopping polling.')
-          if (intervalId) {
-            clearInterval(intervalId)
-            intervalId = null
-          }
-          toastManager.error('Игра не найдена')
-          router.push('/')
-          return
-        }
-        
-        // Handle 500/503 - server errors, but continue polling with backoff
         if (res.status >= 500) {
-          errorCount++
-          // Exponential backoff: increase interval on errors
-          pollInterval = Math.min(pollInterval * 1.5, maxInterval)
-          
-          if (errorCount <= 3) {
-            // Only log first few errors to avoid spam
-            console.warn(`Server error (${res.status}), retrying with ${pollInterval}ms interval. Error count: ${errorCount}`)
-          }
-          
-          // Reset interval with new pollInterval
-          if (intervalId) {
-            clearInterval(intervalId)
-            intervalId = setInterval(fetchGame, pollInterval)
-          }
+          pollInterval = Math.min(pollInterval * 1.5, 5000)
+          clearInterval(intervalId)
+          intervalId = setInterval(fetchGame, pollInterval)
           return
         }
         
-        // Success - reset error count and interval
-        if (errorCount > 0) {
-          errorCount = 0
-          pollInterval = 500
-          if (intervalId) {
-            clearInterval(intervalId)
-            intervalId = setInterval(fetchGame, pollInterval)
-          }
+        if (pollInterval > 1000) {
+          pollInterval = 1000
+          clearInterval(intervalId)
+          intervalId = setInterval(fetchGame, pollInterval)
         }
         
         const data = await res.json()
         if (data.game && isMounted) {
           setGame(data.game)
           
-          // Update last move if there are moves
-          if (data.game.moves && data.game.moves.length > 0) {
-            const lastMoveData = data.game.moves[data.game.moves.length - 1]
-            if (lastMoveData.move) {
-              const [from, to] = lastMoveData.move.split('-')
+          if (data.game.moves?.length > 0) {
+            const lastMove = data.game.moves[data.game.moves.length - 1].move
+            if (lastMove) {
+              const [from, to] = lastMove.split('-')
               setLastMove({ from, to })
             }
           }
           
-          // Determine player color - MUST be recalculated every time
-          // This is critical - we need to check which player the current user is
-          let newPlayerColor: 'white' | 'black' = 'white'
-          
-          // Use strict comparison and check both IDs
-          const isWhitePlayer = String(data.game.whitePlayerId) === String(user.id)
-          const isBlackPlayer = String(data.game.blackPlayerId) === String(user.id)
-          
-          if (isWhitePlayer) {
-            newPlayerColor = 'white'
-          } else if (isBlackPlayer) {
-            newPlayerColor = 'black'
-          } else {
-            if (process.env.NODE_ENV === 'development') {
-              console.error('User is not part of this game:', {
-                userId: user.id,
-                whitePlayerId: data.game.whitePlayerId,
-                blackPlayerId: data.game.blackPlayerId
-              })
-            }
-            // Default to white if user is not found (shouldn't happen)
-            newPlayerColor = 'white'
-          }
-          
-          if (isMounted) {
-            setPlayerColor(newPlayerColor)
-          }
-        }
-        
-        if (isMounted) {
+          const isWhite = String(data.game.whitePlayerId) === String(user.id)
+          const isBlack = String(data.game.blackPlayerId) === String(user.id)
+          setPlayerColor(isWhite ? 'white' : isBlack ? 'black' : 'white')
           setLoading(false)
         }
-      } catch (error: any) {
-        errorCount++
-        pollInterval = Math.min(pollInterval * 1.5, maxInterval)
-        
-        // Handle network errors (TypeError: Load failed, Failed to fetch, etc.)
-        if (error instanceof TypeError || error?.message?.includes('Load failed') || error?.message?.includes('Failed to fetch')) {
-          if (errorCount <= 3) {
-            console.warn(`Network error fetching game (${errorCount}), retrying with ${pollInterval}ms interval:`, error.message)
-          }
-          // Continue polling with backoff for network errors
-          if (intervalId) {
-            clearInterval(intervalId)
-            intervalId = setInterval(fetchGame, pollInterval)
-          }
-          if (isMounted) {
-            setLoading(false)
-          }
-          return
-        }
-        
-        if (errorCount <= 3) {
-          console.error('Error fetching game:', error)
-        }
-        
-        // Reset interval with new pollInterval
-        if (intervalId) {
-          clearInterval(intervalId)
-          intervalId = setInterval(fetchGame, pollInterval)
-        }
-        
-        if (isMounted) {
-          setLoading(false)
-        }
+      } catch (error) {
+        pollInterval = Math.min(pollInterval * 1.5, 5000)
+        clearInterval(intervalId)
+        intervalId = setInterval(fetchGame, pollInterval)
+        if (isMounted) setLoading(false)
       }
     }
 
     fetchGame()
-    
-    // Poll for game updates with adaptive interval
     intervalId = setInterval(fetchGame, pollInterval)
     
     return () => {
       isMounted = false
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
+      clearInterval(intervalId)
     }
   }, [gameId, user, router])
 

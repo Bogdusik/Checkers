@@ -30,29 +30,21 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
 
     const fetchInvites = async () => {
       try {
-        const res = await fetch('/api/game/invite/list', {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' }
-        })
+        const res = await fetch('/api/game/invite/list', { cache: 'no-store' })
         const data = await res.json()
-        if (data.invites) {
-          setInvites(data.invites)
-        }
+        if (data.invites) setInvites(data.invites)
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') console.error('Error fetching invites:', error)
+        // Silently fail
       }
     }
 
     fetchInvites()
-    // Poll every 2 seconds for new invites
     const interval = setInterval(fetchInvites, 2000)
-
     return () => clearInterval(interval)
   }, [userId])
 
   const handleAccept = async (inviteId: string) => {
     try {
-      console.log('Accepting invite:', inviteId, 'User ID:', userId)
       const res = await fetch('/api/game/invite/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,28 +52,19 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
       })
       const data = await res.json()
       
-      console.log('Accept invite response:', { status: res.status, data })
-      
       if (!res.ok) {
-        // Server returned an error status
-        const errorMessage = data.error || 'Ошибка принятия приглашения'
-        console.error('Accept invite error:', errorMessage, 'Status:', res.status)
-        toastManager.error(errorMessage)
+        toastManager.error(data.error || 'Ошибка принятия приглашения')
         return
       }
       
       if (data.game) {
-        // Remove accepted invite
         setInvites(prev => prev.filter(inv => inv.id !== inviteId))
-        // Navigate to game
         router.push(`/game?id=${data.game.id}`)
       } else {
-        console.error('No game in response:', data)
         toastManager.error(data.error || 'Ошибка принятия приглашения')
       }
-    } catch (error: any) {
-      console.error('Error accepting invite:', error)
-      toastManager.error('Ошибка подключения. Проверьте интернет-соединение.')
+    } catch (error) {
+      toastManager.error('Ошибка подключения')
     }
   }
 
@@ -92,10 +75,9 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ inviteId })
       })
-      // Remove declined invite
       setInvites(prev => prev.filter(inv => inv.id !== inviteId))
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error declining invite:', error)
+      // Silently fail
     }
   }
 
@@ -118,12 +100,8 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
                 <Mail className="w-5 h-5 text-blue-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-white font-semibold text-sm mb-1">
-                  Приглашение в игру
-                </h3>
-                <p className="text-gray-300 text-xs mb-3">
-                  {invite.fromUser.username} приглашает вас сыграть
-                </p>
+                <h3 className="text-white font-semibold text-sm mb-1">Приглашение в игру</h3>
+                <p className="text-gray-300 text-xs mb-3">{invite.fromUser.username} приглашает вас сыграть</p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleAccept(invite.id)}
@@ -141,10 +119,7 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
                   </button>
                 </div>
               </div>
-              <button
-                onClick={() => handleDecline(invite.id)}
-                className="p-1 hover:bg-black/20 rounded transition-colors"
-              >
+              <button onClick={() => handleDecline(invite.id)} className="p-1 hover:bg-black/20 rounded transition-colors">
                 <X className="w-4 h-4 text-gray-400" />
               </button>
             </div>
@@ -154,4 +129,3 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
     </div>
   )
 }
-

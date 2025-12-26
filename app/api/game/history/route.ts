@@ -17,27 +17,12 @@ export async function GET(request: NextRequest) {
 
     const games = await prisma.game.findMany({
       where: {
-        OR: [
-          { whitePlayerId: user.id },
-          { blackPlayerId: user.id }
-        ],
-        status: {
-          in: ['WHITE_WON', 'BLACK_WON', 'DRAW', 'ABANDONED']
-        }
+        OR: [{ whitePlayerId: user.id }, { blackPlayerId: user.id }],
+        status: { in: ['WHITE_WON', 'BLACK_WON', 'DRAW', 'ABANDONED'] }
       },
       include: {
-        whitePlayer: {
-          select: {
-            id: true,
-            username: true
-          }
-        },
-        blackPlayer: {
-          select: {
-            id: true,
-            username: true
-          }
-        }
+        whitePlayer: { select: { id: true, username: true } },
+        blackPlayer: { select: { id: true, username: true } }
       },
       orderBy: { endedAt: 'desc' },
       take: limit,
@@ -46,29 +31,13 @@ export async function GET(request: NextRequest) {
 
     const total = await prisma.game.count({
       where: {
-        OR: [
-          { whitePlayerId: user.id },
-          { blackPlayerId: user.id }
-        ],
-        status: {
-          in: ['WHITE_WON', 'BLACK_WON', 'DRAW', 'ABANDONED']
-        }
+        OR: [{ whitePlayerId: user.id }, { blackPlayerId: user.id }],
+        status: { in: ['WHITE_WON', 'BLACK_WON', 'DRAW', 'ABANDONED'] }
       }
     })
 
-    return NextResponse.json({
-      games,
-      total,
-      hasMore: offset + limit < total
-    })
+    return NextResponse.json({ games, total, hasMore: offset + limit < total })
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error fetching game history:', error)
-    }
-    return NextResponse.json(
-      { error: 'Ошибка получения истории игр' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ошибка получения истории игр' }, { status: 500 })
   }
 }
-

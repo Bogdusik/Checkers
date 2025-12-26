@@ -10,20 +10,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { opponentId } = body
-
-    // If opponentId is null, play against self
-    // If opponentId is provided and different from user.id, create game with that opponent
-    // If opponentId equals user.id, also play against self
-
+    const { opponentId } = await request.json()
     const checkersGame = createNewGame()
     const initialFen = gameToFen(checkersGame)
 
     const isPlayingAgainstSelf = opponentId === null || opponentId === user.id
     const finalOpponentId = isPlayingAgainstSelf ? user.id : opponentId
-
-    // Randomly assign colors for fairness
     const isUserWhite = Math.random() < 0.5
     const whitePlayerId = isUserWhite ? user.id : finalOpponentId
     const blackPlayerId = isUserWhite ? finalOpponentId : user.id
@@ -32,37 +24,18 @@ export async function POST(request: NextRequest) {
       data: {
         whitePlayerId,
         blackPlayerId,
-        status: isPlayingAgainstSelf ? 'IN_PROGRESS' : 'IN_PROGRESS',
+        status: 'IN_PROGRESS',
         startedAt: new Date(),
         fen: initialFen
       },
       include: {
-        whitePlayer: {
-          select: {
-            id: true,
-            username: true,
-            email: true
-          }
-        },
-        blackPlayer: {
-          select: {
-            id: true,
-            username: true,
-            email: true
-          }
-        }
+        whitePlayer: { select: { id: true, username: true, email: true } },
+        blackPlayer: { select: { id: true, username: true, email: true } }
       }
     })
 
     return NextResponse.json({ game })
   } catch (error) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error creating game:', error)
-    }
-    return NextResponse.json(
-      { error: 'Ошибка создания игры' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Ошибка создания игры' }, { status: 500 })
   }
 }
-
