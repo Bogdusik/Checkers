@@ -390,7 +390,7 @@ function findCaptureSequencesRecursive(
           if (!isValidSquare(jumpCol, jumpRow)) break
           
           if (isDarkSquare(jumpRow - 1, jumpCol)) {
-            const jumpSquare = coordsToSquare(jumpCol, jumpRow)
+          const jumpSquare = coordsToSquare(jumpCol, jumpRow)
             
             // Check if path from current to jump square is clear (except for the enemy)
             let pathClear = true
@@ -540,7 +540,7 @@ function executeCaptureSequence(
     if (middlePiece && middlePiece.color !== piece.color) {
       board.delete(middleSquare)
       capturedSquares.push(middleSquare)
-    }
+  }
   }
   
   return capturedSquares
