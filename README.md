@@ -1,5 +1,11 @@
 # Online Checkers Game
 
+[![CI](https://github.com/Bogdusik/Checkers/workflows/CI/badge.svg)](https://github.com/Bogdusik/Checkers/actions)
+[![Next.js](https://img.shields.io/badge/Next.js-14.0.4-black.svg)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-blue.svg)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Online checkers game with the ability to play against other registered players or against yourself.
 
 ## Features
@@ -37,13 +43,29 @@ Online checkers game with the ability to play against other registered players o
 
 ## Installation
 
-1. Clone the repository
+### Prerequisites
+- Node.js 18.x or higher
+- PostgreSQL 15 or higher
+- npm or yarn
+
+### Local Development
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Bogdusik/Checkers.git
+cd Checkers
+```
+
 2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Configure environment variables (create `.env`):
+3. Configure environment variables:
+```bash
+cp .env.example .env
+```
+Then edit `.env` and set:
 ```
 DATABASE_URL=postgresql://user:password@localhost:5432/checkers_db
 JWT_SECRET=your-secret-key-minimum-32-characters
@@ -70,11 +92,42 @@ npm test
 npm run test:ui
 ```
 
-## Deployment on Vercel
+### Docker Development
 
-Detailed instructions in [DEPLOY.md](./DEPLOY.md)
+1. Copy environment file:
+```bash
+cp .env.example .env
+```
 
-### Quick start:
+2. Start services with Docker Compose:
+```bash
+docker-compose up -d
+```
+
+3. Run database migrations:
+```bash
+docker-compose exec app npx prisma db push
+```
+
+The application will be available at `http://localhost:3000`
+
+## Deployment
+
+### Docker Deployment
+
+1. Build and run with Docker Compose:
+```bash
+docker-compose up -d
+```
+
+2. Run database migrations:
+```bash
+docker-compose exec app npx prisma db push
+```
+
+The application will be available at `http://localhost:3000`
+
+### Vercel Deployment
 
 1. Push code to GitHub
 2. Connect repository to Vercel

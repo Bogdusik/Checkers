@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: checkers-postgres
+    environment:
+      POSTGRES_DB: checkers_db
+      POSTGRES_USER: checkers_user
+      POSTGRES_PASSWORD: checkers_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checkers_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: checkers-app
+    environment:
+      DATABASE_URL: postgresql://checkers_user:checkers_password@postgres:5432/checkers_db
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-minimum-32-characters-long-please-change-this}
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
