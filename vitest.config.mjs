@@ -9,8 +9,8 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['node_modules', 'dist', '.next', '.vercel'],
+    include: ['**/__tests__/**/*.{ts,tsx}', '**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    exclude: ['node_modules', 'dist', '.next', '.vercel', 'app'],
   },
   resolve: {
     alias: {
