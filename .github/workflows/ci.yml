@@ -48,10 +48,11 @@ jobs:
         DATABASE_URL: postgresql://checkers_user:checkers_password@localhost:5432/checkers_db
     
     - name: Run tests
-      run: npm test
+      run: npm test -- --run
       env:
         DATABASE_URL: postgresql://checkers_user:checkers_password@localhost:5432/checkers_db
         JWT_SECRET: test-secret-key-minimum-32-characters-long
+        NODE_OPTIONS: --experimental-vm-modules
     
     - name: Run linter
       run: npm run lint
