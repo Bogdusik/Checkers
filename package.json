@@ -1,6 +1,7 @@
 {
-  "name": "online-chess-game",
+  "name": "online-checkers-game",
   "version": "1.0.0",
+  "description": "Online checkers game with real-time multiplayer support, ELO rating system, and comprehensive game features",
   "private": true,
   "scripts": {
     "dev": "next dev",
