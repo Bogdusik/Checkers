@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vitest/config'
 import path from 'path'
 
@@ -11,6 +12,9 @@ export default defineConfig({
     alias: {
       '@': path.resolve(process.cwd(), './'),
     },
+  },
+  esbuild: {
+    target: 'node18',
   },
 })
 
