@@ -140,4 +140,4 @@ Checkers/
 - **Type-Safe APIs**: Used Zod for comprehensive input validation and TypeScript for end-to-end type safety
 - **Database Design**: Designed relational schema with Prisma for users, games, moves, friendships, and statistics
 
-Fork it, use it, improve it — open to PRs!
+Fork it, use it, improve it - open to PRs!
