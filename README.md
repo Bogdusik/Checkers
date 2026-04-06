@@ -4,10 +4,6 @@ An online multiplayer checkers game with real-time gameplay, ELO rating system, 
 
 ## Demo
 
-![Game Board](screenshots/game-board.png)
-![Lobby](screenshots/lobby.png)
-![Profile & Statistics](screenshots/profile.png)
-
 ## Why It's Cool
 
 - **Real-Time Multiplayer**: Play against other registered players with Server-Sent Events (SSE) for instant game updates
