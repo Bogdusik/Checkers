@@ -6,7 +6,6 @@ import { updateRatings } from '@/lib/rating'
 import { ensureUserStatistics } from '@/lib/statistics'
 import { schemas } from '@/lib/validation'
 import { GameStatus } from '@prisma/client'
-import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
