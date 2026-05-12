@@ -12,7 +12,14 @@ export async function GET(request: NextRequest) {
     }
 
     const users = await prisma.user.findMany({
-      include: {
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        isAdmin: true,
+        createdAt: true,
+        updatedAt: true,
+        lastLoginAt: true,
         statistics: true,
         _count: {
           select: {

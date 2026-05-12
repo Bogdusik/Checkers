@@ -81,16 +81,19 @@ export function checkRateLimit(
   }
 }
 
+const IP_REGEX = /^(\d{1,3}\.){3}\d{1,3}$|^[0-9a-fA-F:]+$/
+
 /**
- * Gets client identifier from request
+ * Gets client identifier from request.
+ * NOTE: x-forwarded-for can be spoofed by clients not behind a trusted proxy.
+ * For production, configure your proxy/CDN to set a trusted header and read only that.
  */
 export function getClientIdentifier(request: Request): string {
-  // Try to get IP from various headers (for proxies/load balancers)
   const forwarded = request.headers.get('x-forwarded-for')
   const realIp = request.headers.get('x-real-ip')
-  const ip = forwarded?.split(',')[0] || realIp || 'unknown'
-  
-  return ip.trim()
+  const raw = forwarded?.split(',')[0]?.trim() || realIp?.trim() || 'unknown'
+  // Accept only valid-looking IP addresses to prevent crafted header bypasses
+  return IP_REGEX.test(raw) ? raw : 'unknown'
 }
 
 /**

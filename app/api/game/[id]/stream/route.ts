@@ -55,6 +55,8 @@ export async function GET(
           send({ type: 'error', message: 'Failed to load game' })
         }
 
+        let lastMoveNumber = -1
+
         const interval = setInterval(async () => {
           try {
             const gameData = await prisma.game.findUnique({
@@ -64,16 +66,27 @@ export async function GET(
               }
             })
 
-            if (gameData && gameData.moves && gameData.moves.length > 0) {
+            if (!gameData) return
+
+            const latestMove = gameData.moves[0]
+            if (latestMove && latestMove.moveNumber !== lastMoveNumber) {
+              lastMoveNumber = latestMove.moveNumber
               send({
                 type: 'move',
-                move: gameData.moves[0].move,
+                move: latestMove.move,
                 fen: gameData.fen,
                 status: gameData.status
               })
             }
+
+            const terminalStatuses = ['WHITE_WON', 'BLACK_WON', 'DRAW', 'ABANDONED']
+            if (terminalStatuses.includes(gameData.status)) {
+              send({ type: 'gameOver', status: gameData.status })
+              clearInterval(interval)
+              try { controller.close() } catch { /* already closed */ }
+            }
           } catch {
-            // Silently fail
+            // Silently fail on transient DB errors
           }
         }, 1000)
 

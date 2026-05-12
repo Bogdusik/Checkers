@@ -21,14 +21,28 @@ export async function GET(
       return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const before = searchParams.get('before') // cursor: createdAt ISO string
+    const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 100)
+
     const messages = await prisma.gameMessage.findMany({
-      where: { gameId: params.id },
+      where: {
+        gameId: params.id,
+        ...(before ? { createdAt: { lt: new Date(before) } } : {})
+      },
       include: { user: { select: { id: true, username: true } } },
-      orderBy: { createdAt: 'asc' },
-      take: 100
+      orderBy: { createdAt: 'desc' },
+      take: limit
     })
 
-    return NextResponse.json({ messages })
+    // Return in ascending order; oldest first
+    messages.reverse()
+
+    return NextResponse.json({
+      messages,
+      hasMore: messages.length === limit,
+      nextCursor: messages.length > 0 ? messages[0].createdAt.toISOString() : null
+    })
   } catch (error) {
     return NextResponse.json({ error: 'Ошибка получения сообщений' }, { status: 500 })
   }

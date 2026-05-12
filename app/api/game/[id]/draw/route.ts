@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ensureUserStatistics } from '@/lib/statistics'
+import { schemas } from '@/lib/validation'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,14 @@ export async function POST(
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    const { action } = await request.json()
+    let action: 'offer' | 'accept' | 'decline'
+    try {
+      const body = schemas.drawAction.parse(await request.json())
+      action = body.action
+    } catch {
+      return NextResponse.json({ error: 'Неверное действие' }, { status: 400 })
+    }
+
     const game = await prisma.game.findUnique({
       where: { id: params.id },
       include: {

@@ -4,7 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { makeMove, gameToFen, fenToGame, getGameStatus, type CheckersGame, type Square } from '@/lib/checkers'
 import { updateRatings } from '@/lib/rating'
 import { ensureUserStatistics } from '@/lib/statistics'
+import { schemas } from '@/lib/validation'
 import { GameStatus } from '@prisma/client'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,10 +21,12 @@ export async function POST(
     }
 
 
-    const body = await request.json()
-    const { from, to } = body
-
-    if (!from || !to) {
+    let from: string, to: string
+    try {
+      const body = schemas.move.parse(await request.json())
+      from = body.from
+      to = body.to
+    } catch {
       return NextResponse.json({ error: 'Неверный формат хода' }, { status: 400 })
     }
 
@@ -148,57 +152,52 @@ export async function POST(
       if (gameStatus === 'WHITE_WON' || gameStatus === 'BLACK_WON' || gameStatus === 'DRAW') {
         const isPlayingAgainstSelf = String(game.whitePlayerId) === String(game.blackPlayerId)
 
-        if (isPlayingAgainstSelf) {
-          // When playing against self, update stats only once
-          const stats = await ensureUserStatistics(game.whitePlayerId)
+        await prisma.$transaction(async (tx) => {
+          if (isPlayingAgainstSelf) {
+            const stats = await ensureUserStatistics(game.whitePlayerId)
+            await tx.userStatistics.update({
+              where: { userId: game.whitePlayerId },
+              data: {
+                totalGames: stats.totalGames + 1,
+                wins: gameStatus === 'WHITE_WON' || gameStatus === 'BLACK_WON' ? stats.wins + 1 : stats.wins,
+                losses: gameStatus === 'WHITE_WON' || gameStatus === 'BLACK_WON' ? stats.losses + 1 : stats.losses,
+                draws: gameStatus === 'DRAW' ? stats.draws + 1 : stats.draws,
+                totalMoves: stats.totalMoves + moveNumber
+              }
+            })
+          } else {
+            const whiteStats = await ensureUserStatistics(game.whitePlayerId)
+            const blackStats = await ensureUserStatistics(game.blackPlayerId)
 
-          await prisma.userStatistics.update({
-            where: { userId: game.whitePlayerId },
-            data: {
-              totalGames: stats.totalGames + 1,
-              // When playing against self, one side wins and the other loses
-              wins: gameStatus === 'WHITE_WON' || gameStatus === 'BLACK_WON' ? stats.wins + 1 : stats.wins,
-              losses: gameStatus === 'WHITE_WON' || gameStatus === 'BLACK_WON' ? stats.losses + 1 : stats.losses,
-              draws: gameStatus === 'DRAW' ? stats.draws + 1 : stats.draws,
-              totalMoves: stats.totalMoves + moveNumber
-            }
-          })
-        } else {
-          // Get both players' stats for rating calculation (ensure they exist)
-          const whiteStats = await ensureUserStatistics(game.whitePlayerId)
-          const blackStats = await ensureUserStatistics(game.blackPlayerId)
+            const ratingResult = gameStatus === 'WHITE_WON' ? 'white_won'
+              : gameStatus === 'BLACK_WON' ? 'black_won' : 'draw'
+            const ratings = updateRatings(whiteStats.rating, blackStats.rating, ratingResult)
 
-          // Calculate new ratings
-          const result = gameStatus === 'WHITE_WON' ? 'white_won' : 
-                        gameStatus === 'BLACK_WON' ? 'black_won' : 'draw'
-          const ratings = updateRatings(whiteStats.rating, blackStats.rating, result)
+            await tx.userStatistics.update({
+              where: { userId: game.whitePlayerId },
+              data: {
+                totalGames: whiteStats.totalGames + 1,
+                wins: gameStatus === 'WHITE_WON' ? whiteStats.wins + 1 : whiteStats.wins,
+                losses: gameStatus === 'BLACK_WON' ? whiteStats.losses + 1 : whiteStats.losses,
+                draws: gameStatus === 'DRAW' ? whiteStats.draws + 1 : whiteStats.draws,
+                totalMoves: whiteStats.totalMoves + moveNumber,
+                rating: ratings.newWhiteRating
+              }
+            })
 
-          // Update white player stats
-          await prisma.userStatistics.update({
-            where: { userId: game.whitePlayerId },
-            data: {
-              totalGames: whiteStats.totalGames + 1,
-              wins: gameStatus === 'WHITE_WON' ? whiteStats.wins + 1 : whiteStats.wins,
-              losses: gameStatus === 'BLACK_WON' ? whiteStats.losses + 1 : whiteStats.losses,
-              draws: gameStatus === 'DRAW' ? whiteStats.draws + 1 : whiteStats.draws,
-              totalMoves: whiteStats.totalMoves + moveNumber,
-              rating: ratings.newWhiteRating
-            }
-          })
-
-          // Update black player stats
-          await prisma.userStatistics.update({
-            where: { userId: game.blackPlayerId },
-            data: {
-              totalGames: blackStats.totalGames + 1,
-              wins: gameStatus === 'BLACK_WON' ? blackStats.wins + 1 : blackStats.wins,
-              losses: gameStatus === 'WHITE_WON' ? blackStats.losses + 1 : blackStats.losses,
-              draws: gameStatus === 'DRAW' ? blackStats.draws + 1 : blackStats.draws,
-              totalMoves: blackStats.totalMoves + moveNumber,
-              rating: ratings.newBlackRating
-            }
-          })
-        }
+            await tx.userStatistics.update({
+              where: { userId: game.blackPlayerId },
+              data: {
+                totalGames: blackStats.totalGames + 1,
+                wins: gameStatus === 'BLACK_WON' ? blackStats.wins + 1 : blackStats.wins,
+                losses: gameStatus === 'WHITE_WON' ? blackStats.losses + 1 : blackStats.losses,
+                draws: gameStatus === 'DRAW' ? blackStats.draws + 1 : blackStats.draws,
+                totalMoves: blackStats.totalMoves + moveNumber,
+                rating: ratings.newBlackRating
+              }
+            })
+          }
+        })
       }
 
       return NextResponse.json({

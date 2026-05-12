@@ -1,29 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { schemas } from '@/lib/validation'
 
 const ONLINE_THRESHOLD_MS = 5 * 60 * 1000
-
-async function computePresence(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, username: true, email: true, lastLoginAt: true }
-  })
-
-  const inGame = await prisma.game.findFirst({
-    where: {
-      status: 'IN_PROGRESS',
-      endedAt: null,
-      OR: [{ whitePlayerId: userId }, { blackPlayerId: userId }]
-    },
-    select: { id: true }
-  })
-
-  const lastSeen = user?.lastLoginAt ? new Date(user.lastLoginAt).getTime() : 0
-  const isOnline = !!user?.lastLoginAt && Date.now() - lastSeen <= ONLINE_THRESHOLD_MS
-
-  return { user, isOnline, inGame: !!inGame }
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,38 +16,51 @@ export async function GET(request: NextRequest) {
       where: {
         OR: [{ requesterId: currentUser.id }, { addresseeId: currentUser.id }]
       },
+      include: {
+        requester: { select: { id: true, username: true, email: true, lastLoginAt: true } },
+        addressee: { select: { id: true, username: true, email: true, lastLoginAt: true } }
+      },
       orderBy: { updatedAt: 'desc' }
     })
 
-    const incoming = friends.filter(f => f.status === 'PENDING' && f.addresseeId === currentUser.id)
-    const outgoing = friends.filter(f => f.status === 'PENDING' && f.requesterId === currentUser.id)
-    const accepted = friends.filter(f => f.status === 'ACCEPTED')
+    // Collect unique user IDs to batch-check in-game status
+    const userIds = [...new Set(friends.flatMap(f => [f.requesterId, f.addresseeId]))].filter(
+      id => id !== currentUser.id
+    )
 
-    const enrich = async (records: typeof friends) => {
-      const result = []
-      for (const fr of records) {
-        const targetId = fr.requesterId === currentUser.id ? fr.addresseeId : fr.requesterId
-        const presence = await computePresence(targetId)
-        if (presence.user) {
-          result.push({
-            id: fr.id,
-            status: fr.status,
-            user: presence.user,
-            isOnline: presence.isOnline,
-            inGame: presence.inGame,
-            requestedByMe: fr.requesterId === currentUser.id,
-            createdAt: fr.createdAt,
-            acceptedAt: fr.acceptedAt
-          })
+    const activeGames = await prisma.game.findMany({
+      where: {
+        status: 'IN_PROGRESS',
+        endedAt: null,
+        OR: userIds.map(id => ({ whitePlayerId: id })).concat(userIds.map(id => ({ blackPlayerId: id })))
+      },
+      select: { whitePlayerId: true, blackPlayerId: true }
+    })
+
+    const inGameSet = new Set(activeGames.flatMap(g => [g.whitePlayerId, g.blackPlayerId]))
+
+    const now = Date.now()
+    const enrich = (records: typeof friends) =>
+      records.map(fr => {
+        const isRequester = fr.requesterId === currentUser.id
+        const other = isRequester ? fr.addressee : fr.requester
+        const lastSeen = other.lastLoginAt ? new Date(other.lastLoginAt).getTime() : 0
+        return {
+          id: fr.id,
+          status: fr.status,
+          user: { id: other.id, username: other.username, email: other.email, lastLoginAt: other.lastLoginAt },
+          isOnline: !!other.lastLoginAt && now - lastSeen <= ONLINE_THRESHOLD_MS,
+          inGame: inGameSet.has(other.id),
+          requestedByMe: isRequester,
+          createdAt: fr.createdAt,
+          acceptedAt: (fr as any).acceptedAt
         }
-      }
-      return result
-    }
+      })
 
     return NextResponse.json({
-      friends: await enrich(accepted),
-      incoming: await enrich(incoming),
-      outgoing: await enrich(outgoing)
+      friends: enrich(friends.filter(f => f.status === 'ACCEPTED')),
+      incoming: enrich(friends.filter(f => f.status === 'PENDING' && f.addresseeId === currentUser.id)),
+      outgoing: enrich(friends.filter(f => f.status === 'PENDING' && f.requesterId === currentUser.id))
     })
   } catch (error) {
     return NextResponse.json({ error: 'Ошибка получения друзей' }, { status: 500 })
@@ -81,8 +74,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    const { target } = await request.json() as { target?: string }
-    if (!target) {
+    let target: string
+    try {
+      const body = schemas.friendRequest.parse(await request.json())
+      target = body.target
+    } catch {
       return NextResponse.json({ error: 'Укажите email или username' }, { status: 400 })
     }
 
