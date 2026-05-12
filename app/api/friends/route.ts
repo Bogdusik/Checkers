@@ -32,7 +32,10 @@ export async function GET(request: NextRequest) {
       where: {
         status: 'IN_PROGRESS',
         endedAt: null,
-        OR: userIds.map(id => ({ whitePlayerId: id })).concat(userIds.map(id => ({ blackPlayerId: id })))
+        OR: [
+          ...userIds.map(id => ({ whitePlayerId: id })),
+          ...userIds.map(id => ({ blackPlayerId: id }))
+        ]
       },
       select: { whitePlayerId: true, blackPlayerId: true }
     })
