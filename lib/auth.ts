@@ -3,7 +3,10 @@ import bcrypt from 'bcryptjs'
 import { NextRequest } from 'next/server'
 import { prisma } from './prisma'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not set. Configure it in the environment before running the app.')
+}
 
 export interface TokenPayload {
   userId: string

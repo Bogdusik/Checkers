@@ -72,11 +72,8 @@ const getMoveDirections = (piece: Piece): number[][] => {
     : [[-1, -1], [1, -1]] // Black moves down
 }
 
-// Get directions for captures (all 4 directions for men when capturing)
-const getCaptureDirections = (piece: Piece): number[][] => {
-  // Both men and kings can capture in all 4 diagonal directions
-  return [[-1, -1], [-1, 1], [1, -1], [1, 1]]
-}
+// Both men and kings can capture in all 4 diagonal directions
+const getCaptureDirections = (): number[][] => [[-1, -1], [-1, 1], [1, -1], [1, 1]]
 
 /**
  * Creates a new checkers game with initial board setup
@@ -188,11 +185,12 @@ export function fenToGame(fen: string): CheckersGame {
     })
   })
   
+  // When gameOver, currentPlayer is the player who made the winning move (see makeMove)
   return {
     board,
     currentPlayer,
     gameOver,
-    winner: gameOver ? (currentPlayer === 'white' ? 'black' : 'white') : null
+    winner: gameOver ? currentPlayer : null
   }
 }
 
@@ -341,7 +339,7 @@ function findCaptureSequencesRecursive(
   sequences: CaptureSequence[]
 ): void {
   const [col, row] = squareToCoords(currentSquare)
-  const directions = getCaptureDirections(piece)
+  const directions = getCaptureDirections()
   let foundAnyCapture = false
   
   // Check all directions for possible captures

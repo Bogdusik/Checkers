@@ -12,53 +12,58 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
     }
 
-    const allWaitingGames = await prisma.game.findMany({
-      where: { status: 'WAITING' },
-      include: { whitePlayer: { select: { id: true, username: true } } }
-    })
+    const result = await prisma.$transaction(async (tx) => {
+      // Waiting games are stored with whitePlayerId === blackPlayerId (creator as both sides)
+      // Find the oldest one not created by current user, lock it for update
+      const waitingGames = await tx.game.findMany({
+        where: {
+          status: 'WAITING',
+          whitePlayerId: { not: user.id }
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 10
+      })
+      const matchable = waitingGames.find(g => g.whitePlayerId === g.blackPlayerId) ?? null
 
-    const waitingGame = allWaitingGames.find(
-      (game: any) => String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) === String(game.whitePlayerId)
-    )
+      if (matchable) {
+        const isUserWhite = Math.random() < 0.5
+        const whitePlayerId = isUserWhite ? user.id : matchable.whitePlayerId
+        const blackPlayerId = isUserWhite ? matchable.whitePlayerId : user.id
 
-    if (waitingGame) {
-      const isUserWhite = Math.random() < 0.5
-      const whitePlayerId = isUserWhite ? user.id : waitingGame.whitePlayerId
-      const blackPlayerId = isUserWhite ? waitingGame.whitePlayerId : user.id
+        const updatedGame = await tx.game.update({
+          where: { id: matchable.id },
+          data: {
+            whitePlayerId,
+            blackPlayerId,
+            status: 'IN_PROGRESS',
+            startedAt: new Date(),
+            fen: matchable.fen || gameToFen(createNewGame())
+          },
+          include: {
+            whitePlayer: { select: { id: true, username: true, email: true } },
+            blackPlayer: { select: { id: true, username: true, email: true } }
+          }
+        })
+        return { game: updatedGame, joined: true }
+      }
 
-      const updatedGame = await prisma.game.update({
-        where: { id: waitingGame.id },
+      const checkersGame = createNewGame()
+      const newGame = await tx.game.create({
         data: {
-          whitePlayerId,
-          blackPlayerId,
-          status: 'IN_PROGRESS',
-          startedAt: new Date(),
-          fen: waitingGame.fen || gameToFen(createNewGame())
+          whitePlayerId: user.id,
+          blackPlayerId: user.id,
+          status: 'WAITING',
+          fen: gameToFen(checkersGame)
         },
         include: {
           whitePlayer: { select: { id: true, username: true, email: true } },
           blackPlayer: { select: { id: true, username: true, email: true } }
         }
       })
-
-      return NextResponse.json({ game: updatedGame, joined: true })
-    }
-
-    const checkersGame = createNewGame()
-    const newGame = await prisma.game.create({
-      data: {
-        whitePlayerId: user.id,
-        blackPlayerId: user.id,
-        status: 'WAITING',
-        fen: gameToFen(checkersGame)
-      },
-      include: {
-        whitePlayer: { select: { id: true, username: true, email: true } },
-        blackPlayer: { select: { id: true, username: true, email: true } }
-      }
+      return { game: newGame, joined: false }
     })
 
-    return NextResponse.json({ game: newGame, joined: false })
+    return NextResponse.json(result)
   } catch (error) {
     return NextResponse.json({ error: 'Ошибка создания/поиска игры' }, { status: 500 })
   }
