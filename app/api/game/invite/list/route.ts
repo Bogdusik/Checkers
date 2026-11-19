@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const invites = await prisma.gameInvite.findMany({
@@ -25,6 +25,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ invites })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка получения приглашений' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not load invites' }, { status: 500 })
   }
 }

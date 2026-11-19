@@ -7,8 +7,8 @@ export const logError = (error: any, context: string) => {
 }
 
 export const formatDate = (date: string | null) => {
-  if (!date) return 'Никогда'
-  return new Date(date).toLocaleString('ru-RU')
+  if (!date) return 'Never'
+  return new Date(date).toLocaleString('en-GB')
 }
 
 export const isActiveUser = (lastLoginAt: string | null, days: number = 7) => {

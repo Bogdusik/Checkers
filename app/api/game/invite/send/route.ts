@@ -8,17 +8,17 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const { toUserId } = await request.json()
     if (!toUserId || toUserId === user.id) {
-      return NextResponse.json({ error: 'Неверный получатель' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid recipient' }, { status: 400 })
     }
 
     const toUser = await prisma.user.findUnique({ where: { id: toUserId } })
     if (!toUser) {
-      return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const invite = await prisma.$transaction(async (tx) => {
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (existing) {
-        throw new Error('Приглашение уже отправлено')
+        throw new Error('Invite already sent')
       }
 
       return await tx.gameInvite.create({
@@ -62,12 +62,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ invite })
   } catch (error: any) {
-    if (error?.message === 'Приглашение уже отправлено') {
+    if (error?.message === 'Invite already sent') {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
     if (error?.code === 'P1001') {
-      return NextResponse.json({ error: 'Ошибка подключения к БД' }, { status: 503 })
+      return NextResponse.json({ error: 'Database connection error' }, { status: 503 })
     }
-    return NextResponse.json({ error: 'Ошибка отправки приглашения' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not send the invite' }, { status: 500 })
   }
 }

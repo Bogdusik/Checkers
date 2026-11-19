@@ -110,7 +110,7 @@ export function withRateLimit(
     if (!result.allowed) {
       return new Response(
         JSON.stringify({
-          error: 'Слишком много запросов. Попробуйте позже.',
+          error: 'Too many requests. Please try again later.',
           retryAfter: Math.ceil((result.resetTime - Date.now()) / 1000)
         }),
         {

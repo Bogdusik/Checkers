@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const { opponentId } = await request.json()
@@ -39,6 +39,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ game })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка создания игры' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not create the game' }, { status: 500 })
   }
 }

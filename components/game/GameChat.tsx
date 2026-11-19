@@ -107,7 +107,7 @@ export default function GameChat({ gameId, currentUserId }: GameChatProps) {
       >
         <div className="flex items-center gap-2">
           <MessageCircle className="w-5 h-5 text-blue-400" />
-          <span className="text-white text-sm font-semibold">Чат</span>
+          <span className="text-white text-sm font-semibold">Chat</span>
           {messages.length > 0 && (
             <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-0.5">
               {messages.length}
@@ -127,13 +127,13 @@ export default function GameChat({ gameId, currentUserId }: GameChatProps) {
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
           <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-          Чат
+          Chat
         </h2>
         <button
           onClick={() => setIsExpanded(false)}
           className="text-gray-400 hover:text-white transition-colors text-sm"
         >
-          Свернуть
+          Collapse
         </button>
       </div>
 
@@ -146,7 +146,7 @@ export default function GameChat({ gameId, currentUserId }: GameChatProps) {
       >
         {messages.length === 0 ? (
           <div className="text-gray-400 text-sm text-center py-4">
-            Нет сообщений. Начните общение!
+            No messages yet. Say hello!
           </div>
         ) : (
           messages.map((msg) => {
@@ -170,7 +170,7 @@ export default function GameChat({ gameId, currentUserId }: GameChatProps) {
                   )}
                   <div className="text-sm break-words">{msg.message}</div>
                   <div className="text-xs text-gray-400 mt-1">
-                    {new Date(msg.createdAt).toLocaleTimeString('ru-RU', {
+                    {new Date(msg.createdAt).toLocaleTimeString('en-GB', {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
@@ -189,7 +189,7 @@ export default function GameChat({ gameId, currentUserId }: GameChatProps) {
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Введите сообщение..."
+          placeholder="Type a message..."
           maxLength={500}
           className="flex-1 px-3 py-2 rounded-lg bg-black/30 text-white text-sm border border-gray-700 focus:border-blue-500 focus:outline-none"
         />

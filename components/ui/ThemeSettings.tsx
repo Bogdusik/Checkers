@@ -45,7 +45,7 @@ export default function ThemeSettings() {
       animate={{ opacity: 1, y: 0 }}
       className="glass-dark rounded-xl p-4"
     >
-      <h3 className="text-white font-semibold mb-3">Тема</h3>
+      <h3 className="text-white font-semibold mb-3">Theme</h3>
       <div className="flex gap-2">
         <button
           onClick={() => setTheme('light')}
@@ -56,7 +56,7 @@ export default function ThemeSettings() {
           }`}
         >
           <Sun className="w-5 h-5 text-yellow-400" />
-          <span className="text-white text-xs">Светлая</span>
+          <span className="text-white text-xs">Light</span>
         </button>
         <button
           onClick={() => setTheme('dark')}
@@ -67,7 +67,7 @@ export default function ThemeSettings() {
           }`}
         >
           <Moon className="w-5 h-5 text-blue-400" />
-          <span className="text-white text-xs">Темная</span>
+          <span className="text-white text-xs">Dark</span>
         </button>
         <button
           onClick={() => setTheme('system')}
@@ -78,7 +78,7 @@ export default function ThemeSettings() {
           }`}
         >
           <Monitor className="w-5 h-5 text-gray-400" />
-          <span className="text-white text-xs">Система</span>
+          <span className="text-white text-xs">System</span>
         </button>
       </div>
     </motion.div>

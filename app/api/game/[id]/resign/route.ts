@@ -13,7 +13,7 @@ export async function POST(
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const game = await prisma.game.findUnique({
@@ -25,11 +25,11 @@ export async function POST(
     })
 
     if (!game || (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id))) {
-      return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     if (game.status !== 'IN_PROGRESS' && game.status !== 'WAITING') {
-      return NextResponse.json({ error: 'Игра уже завершена' }, { status: 400 })
+      return NextResponse.json({ error: 'The game is already over' }, { status: 400 })
     }
 
     const isWhitePlayer = String(game.whitePlayerId) === String(user.id)
@@ -72,6 +72,6 @@ export async function POST(
 
     return NextResponse.json({ success: true, game: updatedGame })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка при сдаче' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not resign' }, { status: 500 })
   }
 }

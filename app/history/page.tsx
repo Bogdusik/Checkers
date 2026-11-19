@@ -47,17 +47,17 @@ export default function HistoryPage() {
         setLoading(false)
       })
       .catch(() => {
-        toastManager.error('Ошибка загрузки истории')
+        toastManager.error('Could not load history')
         setLoading(false)
       })
   }, [user])
 
   const getResult = (game: Game) => {
     const isWhite = String(game.whitePlayer.id) === String(user?.id)
-    if (game.status === 'DRAW') return 'Ничья'
-    if (game.status === 'ABANDONED') return 'Прервана'
-    if (game.status === 'WHITE_WON') return isWhite ? 'Победа' : 'Поражение'
-    if (game.status === 'BLACK_WON') return !isWhite ? 'Победа' : 'Поражение'
+    if (game.status === 'DRAW') return 'Draw'
+    if (game.status === 'ABANDONED') return 'Abandoned'
+    if (game.status === 'WHITE_WON') return isWhite ? 'Win' : 'Loss'
+    if (game.status === 'BLACK_WON') return !isWhite ? 'Win' : 'Loss'
     return game.status
   }
 
@@ -91,9 +91,9 @@ export default function HistoryPage() {
             className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            Назад
+            Back
           </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">История игр</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Game history</h1>
         </div>
 
         {games.length === 0 ? (
@@ -102,7 +102,7 @@ export default function HistoryPage() {
             animate={{ opacity: 1 }}
             className="glass-dark rounded-2xl p-8 text-center"
           >
-            <p className="text-gray-400">У вас пока нет завершенных игр</p>
+            <p className="text-gray-400">You have no finished games yet</p>
           </motion.div>
         ) : (
           <div className="space-y-3">
@@ -123,7 +123,7 @@ export default function HistoryPage() {
                       </div>
                       <div className="text-gray-400 text-sm flex items-center gap-2 mt-1">
                         <Calendar className="w-3 h-3" />
-                        {game.endedAt ? new Date(game.endedAt).toLocaleDateString('ru-RU') : 'Не завершена'}
+                        {game.endedAt ? new Date(game.endedAt).toLocaleDateString('en-GB') : 'Not finished'}
                       </div>
                     </div>
                   </div>
@@ -132,7 +132,7 @@ export default function HistoryPage() {
                       {getResult(game)}
                     </div>
                     <button className="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-sm transition-colors">
-                      Просмотр
+                      View
                     </button>
                   </div>
                 </div>

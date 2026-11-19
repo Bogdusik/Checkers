@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!userWithStats) {
-      return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     return NextResponse.json({
@@ -31,6 +31,6 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка получения данных пользователя' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not load user data' }, { status: 500 })
   }
 }

@@ -206,7 +206,9 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
     }
   }, [gameId])
 
-  const isDarkSquare = (row: number, col: number) => (row + col) % 2 === 1
+  // Same rule as lib/checkers.ts: a square is dark (playable) when (rank - 1 + file) is odd.
+  const isDarkSquare = (square: Square) =>
+    (parseInt(square[1]) - 1 + (square.charCodeAt(0) - 97)) % 2 === 1
   
   const coordsToSquare = (col: number, row: number): Square => 
     (String.fromCharCode(97 + col) + row) as Square
@@ -214,15 +216,10 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
   // Get actual square name from display coordinates (board is flipped for black player)
   const getSquareFromDisplay = (displayRow: number, displayCol: number): Square => {
     if (playerColor === 'black') {
-      // For black player: flip both row and col
-      // displayRow 0-7 (top to bottom) -> actualRow 8-1 (bottom to top)
-      // displayCol 0-7 (left to right) -> actualCol 7-0 (right to left)
-      const actualRow = 8 - displayRow
-      const actualCol = 7 - displayCol
-      return coordsToSquare(actualCol, actualRow)
+      // Black sits at the bottom: rank 1 at the top, file h on the left
+      return coordsToSquare(7 - displayCol, displayRow + 1)
     }
-    // For white player: row is flipped, col is not
-    // displayRow 0-7 (top to bottom) -> actualRow 8-1 (bottom to top)
+    // White sits at the bottom: rank 8 at the top, file a on the left
     return coordsToSquare(displayCol, 8 - displayRow)
   }
 
@@ -290,8 +287,8 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
     }
   }
 
-  const renderPiece = (piece: { color: 'white' | 'black'; type: 'man' | 'king' }, row: number, col: number) => {
-    const isSelected = selectedSquare === coordsToSquare(col, row)
+  const renderPiece = (piece: { color: 'white' | 'black'; type: 'man' | 'king' }, square: Square) => {
+    const isSelected = selectedSquare === square
     const isWhite = piece.color === 'white'
     const pieceSize = Math.max(squareSize * 0.75, 24)
     const kingSize = squareSize < 40 ? 'text-lg' : squareSize < 50 ? 'text-xl' : 'text-2xl'
@@ -363,7 +360,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
           {Array.from({ length: BOARD_SIZE }, (_, col) => {
             const displayCol = playerColor === 'black' 
               ? String.fromCharCode(97 + (7 - col))
-              : String.fromCharCode(104 - col)
+              : String.fromCharCode(97 + col)
             return (
               <div
                 key={`col-${col}`}
@@ -396,9 +393,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
                 // Convert display coordinates to actual board coordinates
                 const square = getSquareFromDisplay(displayRow, displayCol)
                 // Get actual row/col for dark square check
-                const actualRow = playerColor === 'black' ? 7 - displayRow : displayRow
-                const actualCol = playerColor === 'black' ? 7 - displayCol : displayCol
-                const isDark = isDarkSquare(actualRow, actualCol)
+                const isDark = isDarkSquare(square)
                 const piece = game.board.get(square)
                 const isValidMove = memoizedValidMoves.includes(square)
                 const isSelected = selectedSquare === square
@@ -438,7 +433,7 @@ export default function CheckersBoard({ gameId, playerColor, onMove, initialFen,
                       zIndex: piece ? 5 : 1,
                     }}
                   >
-                    {piece && renderPiece(piece, actualRow, actualCol)}
+                    {piece && renderPiece(piece, square)}
                     {isValidMove && !piece && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                         <div 

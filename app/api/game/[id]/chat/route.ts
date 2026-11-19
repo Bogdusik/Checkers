@@ -13,12 +13,12 @@ export async function GET(
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const game = await prisma.game.findUnique({ where: { id: params.id } })
     if (!game || (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id))) {
-      return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -44,7 +44,7 @@ export async function GET(
       nextCursor: messages.length > 0 ? messages[0].createdAt.toISOString() : null
     })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка получения сообщений' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not load messages' }, { status: 500 })
   }
 }
 
@@ -62,7 +62,7 @@ export async function POST(
     const game = await prisma.game.findUnique({ where: { id: params.id } })
 
     if (!game) {
-      throw new NotFoundError('Игра не найдена')
+      throw new NotFoundError('Game not found')
     }
 
     if (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id)) {

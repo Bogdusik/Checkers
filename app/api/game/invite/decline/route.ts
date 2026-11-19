@@ -8,19 +8,19 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const { inviteId } = await request.json()
     if (!inviteId) {
-      return NextResponse.json({ error: 'Не указано приглашение' }, { status: 400 })
+      return NextResponse.json({ error: 'No invite specified' }, { status: 400 })
     }
 
     await prisma.$transaction(async (tx) => {
       const invite = await tx.gameInvite.findUnique({ where: { id: inviteId } })
       
       if (!invite || String(invite.toUserId) !== String(user.id) || invite.status !== 'PENDING') {
-        throw new Error('Приглашение недоступно')
+        throw new Error('Invite is no longer available')
       }
 
       await tx.gameInvite.update({
@@ -31,9 +31,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    if (error?.message === 'Приглашение недоступно') {
+    if (error?.message === 'Invite is no longer available') {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
-    return NextResponse.json({ error: 'Ошибка отклонения приглашения' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not decline the invite' }, { status: 500 })
   }
 }
