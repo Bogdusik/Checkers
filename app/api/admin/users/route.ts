@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser(request)
     if (!user || !user.isAdmin) {
-      return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     const users = await prisma.user.findMany({
@@ -34,6 +34,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ users })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка получения пользователей' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not load users' }, { status: 500 })
   }
 }

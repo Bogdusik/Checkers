@@ -72,18 +72,18 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
       
       const data = await res.json()
       if (!res.ok) {
-        toastManager.error(data.error || 'Ошибка отправки приглашения')
+        toastManager.error(data.error || 'Could not send the invite')
         return
       }
       
       if (data.invite) {
-        toastManager.success(`Приглашение отправлено ${data.invite.toUser?.username || 'игроку'}`)
+        toastManager.success(`Invite sent to ${data.invite.toUser?.username || 'the player'}`)
         onClose()
       } else {
-        toastManager.error(data.error || 'Ошибка отправки приглашения')
+        toastManager.error(data.error || 'Could not send the invite')
       }
     } catch {
-      toastManager.error('Ошибка подключения')
+      toastManager.error('Connection error')
     }
   }
 
@@ -101,7 +101,7 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
           <div className="flex justify-between items-center mb-4 sm:mb-6">
             <div className="flex items-center gap-2 sm:gap-3">
               <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">Выберите соперника</h2>
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white">Choose an opponent</h2>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-black/20 rounded-lg transition-colors">
               <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
@@ -120,8 +120,8 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
                     <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold text-sm sm:text-base">Играть против себя</h3>
-                    <p className="text-gray-400 text-xs sm:text-sm">Для тренировки и тестирования</p>
+                    <h3 className="text-white font-semibold text-sm sm:text-base">Play against yourself</h3>
+                    <p className="text-gray-400 text-xs sm:text-sm">For practice and testing</p>
                   </div>
                 </div>
                 <div className="text-green-400 font-semibold text-lg sm:text-xl">✓</div>
@@ -137,7 +137,7 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
                 />
               </div>
             ) : players.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">Нет других игроков</div>
+              <div className="text-center py-8 text-gray-400">No other players yet</div>
             ) : (
               players.map((player) => (
                 <motion.div
@@ -171,9 +171,9 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
                           )}
                         </div>
                         <p className="text-gray-400 text-xs sm:text-sm truncate">
-                          Игр: {player.statistics?.totalGames || 0} | 
-                          Побед: {player.statistics?.wins || 0} | 
-                          Поражений: {player.statistics?.losses || 0}
+                          Games: {player.statistics?.totalGames || 0} | 
+                          Wins: {player.statistics?.wins || 0} | 
+                          Losses: {player.statistics?.losses || 0}
                         </p>
                       </div>
                     </div>
@@ -188,9 +188,9 @@ export default function PlayerSelector({ isOpen, onClose, onSelectPlayer, curren
                             className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-xs sm:text-sm font-semibold flex items-center gap-1"
                           >
                             <Send className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span className="hidden sm:inline">Пригласить</span>
+                            <span className="hidden sm:inline">Invite</span>
                           </button>
-                          <div className="text-green-400 font-semibold text-xs sm:text-sm">Онлайн</div>
+                          <div className="text-green-400 font-semibold text-xs sm:text-sm">Online</div>
                         </>
                       )}
                     </div>

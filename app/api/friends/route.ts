@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser(request)
     if (!currentUser) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const friends = await prisma.friend.findMany({
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       outgoing: enrich(friends.filter(f => f.status === 'PENDING' && f.requesterId === currentUser.id))
     })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка получения друзей' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not load friends' }, { status: 500 })
   }
 }
 
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser(request)
     if (!currentUser) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     let target: string
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       const body = schemas.friendRequest.parse(await request.json())
       target = body.target
     } catch {
-      return NextResponse.json({ error: 'Укажите email или username' }, { status: 400 })
+      return NextResponse.json({ error: 'Enter an email or username' }, { status: 400 })
     }
 
     const targetUser = await prisma.user.findFirst({
@@ -90,11 +90,11 @@ export async function POST(request: NextRequest) {
     })
 
     if (!targetUser) {
-      return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     if (targetUser.id === currentUser.id) {
-      return NextResponse.json({ error: 'Нельзя добавить себя' }, { status: 400 })
+      return NextResponse.json({ error: 'You cannot add yourself' }, { status: 400 })
     }
 
     const existing = await prisma.friend.findFirst({
@@ -108,10 +108,10 @@ export async function POST(request: NextRequest) {
 
     if (existing) {
       if (existing.status === 'PENDING') {
-        return NextResponse.json({ error: 'Заявка уже отправлена' }, { status: 400 })
+        return NextResponse.json({ error: 'Friend request already sent' }, { status: 400 })
       }
       if (existing.status === 'ACCEPTED') {
-        return NextResponse.json({ error: 'Пользователь уже в друзьях' }, { status: 400 })
+        return NextResponse.json({ error: 'Already friends' }, { status: 400 })
       }
       if (existing.status === 'DECLINED') {
         const updated = await prisma.friend.update({
@@ -132,6 +132,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ request: created })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка отправки заявки' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not send the friend request' }, { status: 500 })
   }
 }

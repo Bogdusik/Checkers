@@ -11,7 +11,7 @@ export async function GET(
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const game = await prisma.game.findUnique({
@@ -24,20 +24,20 @@ export async function GET(
     })
 
     if (!game) {
-      return NextResponse.json({ error: 'Игра не найдена' }, { status: 404 })
+      return NextResponse.json({ error: 'Game not found' }, { status: 404 })
     }
 
     if (String(game.whitePlayerId) !== String(user.id) && 
         String(game.blackPlayerId) !== String(user.id) && 
         !user.isAdmin) {
-      return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     return NextResponse.json({ game })
   } catch (error: any) {
     if (error?.code === 'P1001') {
-      return NextResponse.json({ error: 'Ошибка подключения к БД' }, { status: 503 })
+      return NextResponse.json({ error: 'Database connection error' }, { status: 503 })
     }
-    return NextResponse.json({ error: 'Ошибка получения игры' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not load the game' }, { status: 500 })
   }
 }

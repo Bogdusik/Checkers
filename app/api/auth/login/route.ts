@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const rl = checkRateLimit(getClientIdentifier(request), LOGIN_RATE_LIMIT)
     if (!rl.allowed) {
       return NextResponse.json(
-        { error: 'Слишком много попыток входа. Попробуйте позже.' },
+        { error: 'Too many sign-in attempts. Please try again later.' },
         { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetTime - Date.now()) / 1000)) } }
       )
     }
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user || !(await verifyPassword(password, user.password))) {
-      return NextResponse.json({ error: 'Неверный email или пароль' }, { status: 401 })
+      return NextResponse.json({ error: 'Incorrect email or password' }, { status: 401 })
     }
 
     await prisma.user.update({
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     })
 
     const response = NextResponse.json({
-      message: 'Вход выполнен',
+      message: 'Signed in',
       user: {
         id: user.id,
         email: user.email,
@@ -63,11 +63,11 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Неверные данные' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
     }
     if (error?.code === 'P1001') {
-      return NextResponse.json({ error: 'Ошибка подключения к БД' }, { status: 503 })
+      return NextResponse.json({ error: 'Database connection error' }, { status: 503 })
     }
-    return NextResponse.json({ error: 'Ошибка входа' }, { status: 500 })
+    return NextResponse.json({ error: 'Sign-in failed' }, { status: 500 })
   }
 }

@@ -149,12 +149,12 @@ function GameContent() {
             .catch(() => {}) // Silently fail, stats will update on next poll
         }
       } else {
-        const errorData = await res.json().catch(() => ({ error: 'Ошибка хода' }))
-        toastManager.error(errorData.error || 'Ошибка хода')
+        const errorData = await res.json().catch(() => ({ error: 'Move failed' }))
+        toastManager.error(errorData.error || 'Move failed')
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') console.error('Error making move:', error)
-      toastManager.error('Ошибка выполнения хода')
+      toastManager.error('Could not make the move')
     }
   }
 
@@ -168,7 +168,7 @@ function GameContent() {
     if (!gameId) return
     
     // Use a more user-friendly confirmation
-    const confirmed = window.confirm('Вы уверены, что хотите сдаться? Игра будет завершена.')
+    const confirmed = window.confirm('Resign? The game will end.')
     if (!confirmed) return
 
     try {
@@ -180,7 +180,7 @@ function GameContent() {
         const data = await res.json()
         if (data.game) {
           setGame(data.game)
-          toastManager.info('Вы сдались. Игра завершена.')
+          toastManager.info('You resigned. The game is over.')
           // Refresh user stats
           fetch('/api/auth/me')
             .then(res => res.json())
@@ -192,12 +192,12 @@ function GameContent() {
             .catch(() => {})
         }
       } else {
-        const errorData = await res.json().catch(() => ({ error: 'Ошибка при сдаче' }))
-        toastManager.error(errorData.error || 'Ошибка при сдаче')
+        const errorData = await res.json().catch(() => ({ error: 'Could not resign' }))
+        toastManager.error(errorData.error || 'Could not resign')
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') console.error('Error resigning:', error)
-      toastManager.error('Ошибка при сдаче')
+      toastManager.error('Could not resign')
     }
   }
 
@@ -212,7 +212,7 @@ function GameContent() {
       })
       const data = await res.json()
       if (res.ok) {
-        toastManager.success('Предложение ничьей отправлено')
+        toastManager.success('Draw offer sent')
         // Refresh game to show draw offer
         const gameRes = await fetch(`/api/game/${gameId}`, { cache: 'no-store' })
         const gameData = await gameRes.json()
@@ -220,10 +220,10 @@ function GameContent() {
           setGame(gameData.game)
         }
       } else {
-        toastManager.error(data.error || 'Ошибка предложения ничьей')
+        toastManager.error(data.error || 'Could not offer a draw')
       }
     } catch (error) {
-      toastManager.error('Ошибка предложения ничьей')
+      toastManager.error('Could not offer a draw')
     }
   }
 
@@ -271,12 +271,12 @@ function GameContent() {
           animate={{ opacity: 1 }}
           className="text-center"
         >
-          <p className="text-white text-xl mb-4">Игра не найдена</p>
+          <p className="text-white text-xl mb-4">Game not found</p>
           <button
             onClick={() => router.push('/')}
             className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >
-            На главную
+            Home
           </button>
         </motion.div>
       </div>
@@ -294,16 +294,16 @@ function GameContent() {
               className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 glass-dark text-white rounded-lg hover:bg-opacity-50 transition-all text-sm sm:text-base"
             >
               <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="hidden sm:inline">Назад</span>
+              <span className="hidden sm:inline">Back</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Игра в шашки</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Checkers</h1>
           </div>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 px-3 sm:px-4 py-2 glass-dark text-white rounded-lg hover:bg-opacity-50 transition-all text-sm sm:text-base"
           >
             <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="hidden sm:inline">Выход</span>
+            <span className="hidden sm:inline">Sign out</span>
           </button>
         </div>
       </div>
@@ -315,15 +315,15 @@ function GameContent() {
           <div className="lg:col-span-2 order-2 lg:order-1 flex items-center justify-center">
             {game.status === 'WAITING' && String(game.whitePlayerId) !== String(game.blackPlayerId) ? (
               <div className="glass-dark rounded-2xl p-6 sm:p-12 text-center w-full">
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Ожидание соперника</h2>
-                <p className="text-gray-300 mb-6 text-sm sm:text-base">Игра начнется, когда присоединится второй игрок</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Waiting for an opponent</h2>
+                <p className="text-gray-300 mb-6 text-sm sm:text-base">The game starts when a second player joins</p>
                 <div className="flex items-center justify-center gap-2">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"
                   />
-                  <span className="text-gray-400 text-sm sm:text-base">Поиск соперника...</span>
+                  <span className="text-gray-400 text-sm sm:text-base">Looking for an opponent...</span>
                 </div>
               </div>
             ) : (
@@ -358,34 +358,34 @@ function GameContent() {
               >
                 <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Игроки
+                  Players
                 </h2>
                 <div className="space-y-2 sm:space-y-3">
                   <div className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
                     playerColor === 'white' ? 'bg-blue-500/20 border-2 border-blue-500/50' : 'bg-black/20'
                   }`}>
-                    <span className="text-white text-sm sm:text-base">Белые</span>
+                    <span className="text-white text-sm sm:text-base">White</span>
                     <span className="text-gray-300 text-xs sm:text-sm truncate ml-2">
                       {String(game.whitePlayerId) === String(game.blackPlayerId)
-                        ? (game.whitePlayer?.username || user?.username || 'Вы')
-                        : game.whitePlayer?.username || 'Ожидание...'}
-                      {String(game.whitePlayerId) === String(user?.id) && ' (Вы)'}
+                        ? (game.whitePlayer?.username || user?.username || 'You')
+                        : game.whitePlayer?.username || 'Waiting...'}
+                      {String(game.whitePlayerId) === String(user?.id) && ' (you)'}
                     </span>
                   </div>
                   <div className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
                     playerColor === 'black' ? 'bg-blue-500/20 border-2 border-blue-500/50' : 'bg-black/20'
                   }`}>
-                    <span className="text-white text-sm sm:text-base">Черные</span>
+                    <span className="text-white text-sm sm:text-base">Black</span>
                     <span className="text-gray-300 text-xs sm:text-sm truncate ml-2">
                       {String(game.whitePlayerId) === String(game.blackPlayerId)
-                        ? (game.blackPlayer?.username || user?.username || 'Вы')
-                        : game.blackPlayer?.username || 'Ожидание...'}
-                      {String(game.blackPlayerId) === String(user?.id) && ' (Вы)'}
+                        ? (game.blackPlayer?.username || user?.username || 'You')
+                        : game.blackPlayer?.username || 'Waiting...'}
+                      {String(game.blackPlayerId) === String(user?.id) && ' (you)'}
                     </span>
                   </div>
                   <div className="pt-2 border-t border-gray-700 text-xs text-gray-400">
-                    Ваш цвет: <span className="text-white font-semibold">
-                      {playerColor === 'white' ? 'Белые' : 'Черные'}
+                    Your colour: <span className="text-white font-semibold">
+                      {playerColor === 'white' ? 'White' : 'Black'}
                     </span>
                   </div>
                 </div>
@@ -399,23 +399,23 @@ function GameContent() {
               >
                 <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
                   <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Статус игры
+                  Game status
                 </h2>
                 <div className="space-y-3">
                   <div className="space-y-2 text-sm sm:text-base">
                     <div className="text-gray-300">
-                      Статус: <span className="text-white font-semibold">
-                        {game.status === 'WAITING' ? 'Ожидание соперника' : 
-                         game.status === 'IN_PROGRESS' ? 'В процессе' :
-                         game.status === 'WHITE_WON' ? 'Белые победили' :
-                         game.status === 'BLACK_WON' ? 'Черные победили' :
-                         game.status === 'DRAW' ? 'Ничья' : game.status}
+                      Status: <span className="text-white font-semibold">
+                        {game.status === 'WAITING' ? 'Waiting for an opponent' : 
+                         game.status === 'IN_PROGRESS' ? 'In progress' :
+                         game.status === 'WHITE_WON' ? 'White won' :
+                         game.status === 'BLACK_WON' ? 'Black won' :
+                         game.status === 'DRAW' ? 'Draw' : game.status}
                       </span>
                     </div>
                     {game.status === 'IN_PROGRESS' && game.fen && (
                       <div className="text-gray-300">
-                        Ход: <span className="text-white font-semibold">
-                          {game.fen?.split(' ')[1] === 'w' ? 'Белые' : 'Черные'}
+                        Turn: <span className="text-white font-semibold">
+                          {game.fen?.split(' ')[1] === 'w' ? 'White' : 'Black'}
                         </span>
                       </div>
                     )}
@@ -429,7 +429,7 @@ function GameContent() {
                     )}
                     {game.status === 'WAITING' && (
                       <div className="text-blue-400 text-xs sm:text-sm">
-                        Ожидание второго игрока...
+                        Waiting for the second player...
                       </div>
                     )}
                   </div>
@@ -441,14 +441,14 @@ function GameContent() {
                         className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-yellow-500/20 hover:bg-yellow-500/30 border-2 border-yellow-500/50 text-yellow-400 rounded-lg transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Minus className="w-4 h-4" />
-                        Предложить ничью
+                        Offer a draw
                       </button>
                       <button
                         onClick={handleResign}
                         className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border-2 border-red-500/50 text-red-400 rounded-lg transition-all text-sm font-semibold"
                       >
                         <Flag className="w-4 h-4" />
-                        Сдаться
+                        Resign
                       </button>
                     </div>
                   )}
@@ -480,23 +480,23 @@ function GameContent() {
               >
                 <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
                   <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Ваша статистика
+                  Your statistics
                 </h2>
                 <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
                   <div className="flex flex-col">
-                    <span className="text-gray-400 mb-1">Игр</span>
+                    <span className="text-gray-400 mb-1">Games</span>
                     <span className="text-white font-semibold text-lg">{user.statistics?.totalGames || 0}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-gray-400 mb-1">Побед</span>
+                    <span className="text-gray-400 mb-1">Wins</span>
                     <span className="text-green-400 font-semibold text-lg">{user.statistics?.wins || 0}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-gray-400 mb-1">Поражений</span>
+                    <span className="text-gray-400 mb-1">Losses</span>
                     <span className="text-red-400 font-semibold text-lg">{user.statistics?.losses || 0}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-gray-400 mb-1">Ничьих</span>
+                    <span className="text-gray-400 mb-1">Draws</span>
                     <span className="text-yellow-400 font-semibold text-lg">{user.statistics?.draws || 0}</span>
                   </div>
                 </div>

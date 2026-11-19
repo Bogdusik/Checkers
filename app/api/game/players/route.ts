@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000)
@@ -31,6 +31,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ players: playersWithStatus })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка получения списка игроков' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not load players' }, { status: 500 })
   }
 }

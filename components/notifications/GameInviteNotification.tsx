@@ -64,7 +64,7 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
       
       const data = await res.json()
       if (!res.ok) {
-        toastManager.error(data.error || 'Ошибка принятия приглашения')
+        toastManager.error(data.error || 'Could not accept the invite')
         return
       }
       
@@ -72,10 +72,10 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
         setInvites(prev => prev.filter(inv => inv.id !== inviteId))
         router.push(`/game?id=${data.game.id}`)
       } else {
-        toastManager.error(data.error || 'Ошибка принятия приглашения')
+        toastManager.error(data.error || 'Could not accept the invite')
       }
     } catch {
-      toastManager.error('Ошибка подключения')
+      toastManager.error('Connection error')
     }
   }
 
@@ -115,22 +115,22 @@ export default function GameInviteNotification({ userId }: GameInviteNotificatio
                 <Mail className="w-5 h-5 text-blue-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-white font-semibold text-sm mb-1">Приглашение в игру</h3>
-                <p className="text-gray-300 text-xs mb-3">{invite.fromUser.username} приглашает вас сыграть</p>
+                <h3 className="text-white font-semibold text-sm mb-1">Game invite</h3>
+                <p className="text-gray-300 text-xs mb-3">{invite.fromUser.username} invites you to play</p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleAccept(invite.id)}
                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs font-semibold"
                   >
                     <Check className="w-4 h-4" />
-                    Принять
+                    Accept
                   </button>
                   <button
                     onClick={() => handleDecline(invite.id)}
                     className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-xs font-semibold"
                   >
                     <XCircle className="w-4 h-4" />
-                    Отклонить
+                    Decline
                   </button>
                 </div>
               </div>

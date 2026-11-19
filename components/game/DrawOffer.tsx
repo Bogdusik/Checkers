@@ -25,13 +25,13 @@ export default function DrawOffer({ gameId, drawOfferBy, currentUserId, onDrawAc
       })
       const data = await res.json()
       if (res.ok) {
-        toastManager.success('Ничья принята!')
+        toastManager.success('Draw accepted!')
         onDrawAccepted()
       } else {
-        toastManager.error(data.error || 'Ошибка принятия ничьей')
+        toastManager.error(data.error || 'Could not accept the draw')
       }
     } catch (error) {
-      toastManager.error('Ошибка принятия ничьей')
+      toastManager.error('Could not accept the draw')
     }
   }
 
@@ -44,12 +44,12 @@ export default function DrawOffer({ gameId, drawOfferBy, currentUserId, onDrawAc
       })
       const data = await res.json()
       if (res.ok) {
-        toastManager.info('Предложение ничьей отклонено')
+        toastManager.info('Draw offer declined')
       } else {
-        toastManager.error(data.error || 'Ошибка отклонения ничьей')
+        toastManager.error(data.error || 'Could not decline the draw')
       }
     } catch (error) {
-      toastManager.error('Ошибка отклонения ничьей')
+      toastManager.error('Could not decline the draw')
     }
   }
 
@@ -62,7 +62,7 @@ export default function DrawOffer({ gameId, drawOfferBy, currentUserId, onDrawAc
       >
         <div className="flex items-center gap-2 text-yellow-400 text-sm">
           <Users className="w-4 h-4" />
-          <span>Вы предложили ничью. Ожидание ответа...</span>
+          <span>You offered a draw. Waiting for a reply...</span>
         </div>
       </motion.div>
     )
@@ -77,11 +77,11 @@ export default function DrawOffer({ gameId, drawOfferBy, currentUserId, onDrawAc
       <div className="flex items-center gap-3 mb-3">
         <Users className="w-5 h-5 text-blue-400" />
         <h3 className="text-white font-semibold text-sm">
-          Предложение ничьей
+          Draw offer
         </h3>
       </div>
       <p className="text-gray-300 text-xs mb-3">
-        Соперник предлагает ничью
+        Your opponent offers a draw
       </p>
       <div className="flex gap-2">
         <button
@@ -89,14 +89,14 @@ export default function DrawOffer({ gameId, drawOfferBy, currentUserId, onDrawAc
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-xs font-semibold"
         >
           <Check className="w-4 h-4" />
-          Принять
+          Accept
         </button>
         <button
           onClick={handleDecline}
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-xs font-semibold"
         >
           <X className="w-4 h-4" />
-          Отклонить
+          Decline
         </button>
       </div>
     </motion.div>

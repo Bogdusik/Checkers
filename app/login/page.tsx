@@ -28,7 +28,7 @@ export default function LoginPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Ошибка входа')
+        setError(data.error || 'Sign-in failed')
         return
       }
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
       router.refresh()
     } catch (err) {
       console.error('Login fetch error:', err)
-      setError('Не удалось подключиться к серверу. Проверьте интернет-соединение.')
+      setError('Could not reach the server. Check your connection.')
     } finally {
       setLoading(false)
     }
@@ -58,8 +58,8 @@ export default function LoginPage() {
           >
             <LogIn className="w-10 h-10 sm:w-12 sm:h-12 text-blue-400" />
           </motion.div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Вход</h1>
-          <p className="text-gray-400 text-sm sm:text-base">Войдите в свой аккаунт</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Sign in</h1>
+          <p className="text-gray-400 text-sm sm:text-base">Sign in to your account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
@@ -82,7 +82,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Пароль
+              Password
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
@@ -112,15 +112,15 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg glow text-base sm:text-sm"
           >
-            {loading ? 'Вход...' : 'Войти'}
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
         <div className="mt-4 sm:mt-6 text-center">
           <p className="text-gray-400 text-sm sm:text-base">
-            Нет аккаунта?{' '}
+            No account yet?{' '}
             <Link href="/register" className="text-blue-400 hover:text-blue-300 transition-colors">
-              Зарегистрироваться
+              Sign up
             </Link>
           </p>
         </div>

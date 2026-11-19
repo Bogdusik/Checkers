@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const rl = checkRateLimit(getClientIdentifier(request), REGISTER_RATE_LIMIT)
     if (!rl.allowed) {
       return NextResponse.json(
-        { error: 'Слишком много регистраций. Попробуйте позже.' },
+        { error: 'Too many sign-ups. Please try again later.' },
         { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetTime - Date.now()) / 1000)) } }
       )
     }
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingUser) {
-      return NextResponse.json({ error: 'Email или username уже используется' }, { status: 400 })
+      return NextResponse.json({ error: 'Email or username is already taken' }, { status: 400 })
     }
 
     const hashedPassword = await hashPassword(password)
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     })
 
     const response = NextResponse.json({
-      message: 'Регистрация успешна',
+      message: 'Account created',
       user: {
         id: user.id,
         email: user.email,
@@ -71,15 +71,15 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Неверные данные' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
     }
     if (error?.code === 'P2002') {
-      const field = error?.meta?.target?.[0] || 'поле'
-      return NextResponse.json({ error: `${field === 'email' ? 'Email' : 'Username'} уже используется` }, { status: 400 })
+      const field = error?.meta?.target?.[0] || 'field'
+      return NextResponse.json({ error: `${field === 'email' ? 'Email' : 'Username'} is already taken` }, { status: 400 })
     }
     if (error?.code === 'P1001') {
-      return NextResponse.json({ error: 'Ошибка подключения к БД' }, { status: 503 })
+      return NextResponse.json({ error: 'Database connection error' }, { status: 503 })
     }
-    return NextResponse.json({ error: 'Ошибка регистрации' }, { status: 500 })
+    return NextResponse.json({ error: 'Sign-up failed' }, { status: 500 })
   }
 }

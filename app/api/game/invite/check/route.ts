@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const thirtySecondsAgo = new Date(Date.now() - 30 * 1000)
@@ -33,6 +33,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ hasGame: false })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка проверки приглашения' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not check invites' }, { status: 500 })
   }
 }
