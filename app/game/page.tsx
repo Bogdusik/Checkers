@@ -309,10 +309,10 @@ function GameContent() {
       </div>
 
       {/* Main Game Layout - centered vertically */}
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center lg:items-start justify-center">
         <div className="container mx-auto max-w-7xl w-full">
           <div className="grid lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-          <div className="lg:col-span-2 order-2 lg:order-1 flex items-center justify-center">
+          <div className="lg:col-span-2 order-2 lg:order-1 flex items-center lg:items-start justify-center">
             {game.status === 'WAITING' && String(game.whitePlayerId) !== String(game.blackPlayerId) ? (
               <div className="glass-dark rounded-2xl p-6 sm:p-12 text-center w-full">
                 <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Waiting for an opponent</h2>
