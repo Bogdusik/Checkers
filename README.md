@@ -1,17 +1,51 @@
+<div align="center">
+
+<img src="docs/media/game.gif" alt="Two players in two browser windows: White moves on the left board and the move appears at once on Black's board on the right, including a capture and a recapture" width="900">
+
 # Checkers
 
-An online multiplayer checkers game with real-time gameplay, ELO rating system, and comprehensive features. Built to provide a smooth gaming experience with automatic opponent matching, in-game chat, move history, and competitive rankings.
+**Online checkers for two players in real time: moves reach the other browser through Server-Sent Events, with ELO ratings, chat, draw offers and friends.**
 
-## Demo
+[![CI](https://github.com/Bogdusik/Checkers/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Bogdusik/Checkers/actions/workflows/ci.yml)
+[![Play online](https://img.shields.io/badge/play-online-a855f7?logo=vercel&logoColor=white)](https://checkers-bogdus1k.vercel.app)
+![Next.js 14](https://img.shields.io/badge/Next.js-14-000000?logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-PostgreSQL-2D3748?logo=prisma&logoColor=white)
+![SSE](https://img.shields.io/badge/real--time-Server--Sent_Events-22c55e)
 
-## Why It's Cool
+[Play online](https://checkers-bogdus1k.vercel.app) · [Features](#features) · [Run it locally](#how-to-run-locally)
 
-- **Real-Time Multiplayer**: Play against other registered players with Server-Sent Events (SSE) for instant game updates
-- **ELO Rating System**: Competitive ranking system that tracks player skill and matches opponents of similar levels
-- **Full Checkers Logic**: Complete game implementation with regular pieces, kings, forced captures, and all standard rules
-- **Rich Game Features**: In-game chat, move history, game timers, draw offers, and friend system for social gaming
-- **Automatic Matchmaking**: Lobby system that automatically finds opponents or allows playing against yourself for practice
-- **Admin Panel**: Comprehensive admin dashboard for viewing all players, statistics, and managing the platform
+</div>
+
+## Screens
+
+<table>
+<tr>
+<td colspan="2" valign="top">
+<img src="docs/media/game.png" alt="Game page: the board from White's side with the last move highlighted, players, game status, draw and resign buttons, move history and chat"><br>
+<b>The game.</b> Each player sees the board from their own side; the last move is highlighted, illegal moves are refused by the server, and captures are forced.
+</td>
+</tr>
+<tr>
+<td width="55%" valign="top">
+<img src="docs/media/choose-opponent.png" alt="Choose an opponent dialog: play against yourself, or invite an online player with their games, wins and losses"><br>
+<b>Choose an opponent.</b> Invite a player who is online, or play against yourself to practise.
+</td>
+<td width="45%" valign="top">
+<img src="docs/media/profile.png" alt="Profile: games, wins, losses, draws, win rate, ELO rating and friends"><br>
+<b>Profile.</b> Results, win rate, ELO rating and friends.
+</td>
+</tr>
+</table>
+
+## Features
+
+- **Real-time multiplayer:** both players' boards update through Server-Sent Events as soon as a move is saved.
+- **Full rules on the server:** Russian draughts rules (flying kings, forced and chained captures), validated by the server before a move is stored.
+- **ELO rating:** every finished game updates both players' ratings.
+- **In-game tools:** chat, move history, a game timer, draw offers and resigning.
+- **Friends and invites:** add friends by email or username and invite online players to a game.
+- **Admin panel:** players and game statistics for the administrator account.
 
 ## Tech Stack
 
