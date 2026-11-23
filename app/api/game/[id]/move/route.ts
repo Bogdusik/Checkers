@@ -16,7 +16,7 @@ export async function POST(
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
 
@@ -26,7 +26,7 @@ export async function POST(
       from = body.from
       to = body.to
     } catch {
-      return NextResponse.json({ error: 'Неверный формат хода' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid move format' }, { status: 400 })
     }
 
     const game = await prisma.game.findUnique({
@@ -40,17 +40,17 @@ export async function POST(
     })
 
     if (!game) {
-      return NextResponse.json({ error: 'Игра не найдена' }, { status: 404 })
+      return NextResponse.json({ error: 'Game not found' }, { status: 404 })
     }
 
     // Check if user is part of this game
     if (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id)) {
-      return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     // Check game status
     if (game.status !== 'IN_PROGRESS' && game.status !== 'WAITING') {
-      return NextResponse.json({ error: 'Игра завершена' }, { status: 400 })
+      return NextResponse.json({ error: 'The game is over' }, { status: 400 })
     }
 
     // Create checkers game instance from current FEN
@@ -66,7 +66,7 @@ export async function POST(
       
       if (checkersGame.currentPlayer !== playerColor) {
         return NextResponse.json({ 
-          error: `Не ваш ход. Сейчас ходят: ${checkersGame.currentPlayer === 'white' ? 'белые' : 'черные'}` 
+          error: `Not your turn. ${checkersGame.currentPlayer === 'white' ? 'White' : 'Black'} to move` 
         }, { status: 400 })
       }
       
@@ -74,7 +74,7 @@ export async function POST(
       const piece = checkersGame.board.get(from as Square)
       if (!piece || piece.color !== playerColor) {
         return NextResponse.json({ 
-          error: 'Вы можете ходить только своими шашками' 
+          error: 'You can only move your own pieces' 
         }, { status: 400 })
       }
     }
@@ -85,7 +85,7 @@ export async function POST(
       const result = makeMove(checkersGame, from, to)
       
       if (!result.success) {
-        return NextResponse.json({ error: 'Неверный ход' }, { status: 400 })
+        return NextResponse.json({ error: 'Illegal move' }, { status: 400 })
       }
 
       const newFen = gameToFen(result.newGame)
@@ -207,12 +207,12 @@ export async function POST(
         status: gameStatus
       })
     } catch (error: any) {
-      return NextResponse.json({ error: 'Неверный ход' }, { status: 400 })
+      return NextResponse.json({ error: 'Illegal move' }, { status: 400 })
     }
   } catch (error: any) {
     if (error?.code === 'P1001') {
-      return NextResponse.json({ error: 'Ошибка подключения к БД' }, { status: 503 })
+      return NextResponse.json({ error: 'Database connection error' }, { status: 503 })
     }
-    return NextResponse.json({ error: 'Ошибка выполнения хода' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not make the move' }, { status: 500 })
   }
 }

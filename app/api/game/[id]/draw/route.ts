@@ -13,7 +13,7 @@ export async function POST(
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     let action: 'offer' | 'accept' | 'decline'
@@ -21,7 +21,7 @@ export async function POST(
       const body = schemas.drawAction.parse(await request.json())
       action = body.action
     } catch {
-      return NextResponse.json({ error: 'Неверное действие' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
     const game = await prisma.game.findUnique({
@@ -33,11 +33,11 @@ export async function POST(
     })
 
     if (!game || (String(game.whitePlayerId) !== String(user.id) && String(game.blackPlayerId) !== String(user.id))) {
-      return NextResponse.json({ error: 'Нет доступа' }, { status: 403 })
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     if (game.status !== 'IN_PROGRESS') {
-      return NextResponse.json({ error: 'Игра не в процессе' }, { status: 400 })
+      return NextResponse.json({ error: 'The game is not in progress' }, { status: 400 })
     }
 
     if (action === 'offer') {
@@ -54,7 +54,7 @@ export async function POST(
 
     if (action === 'accept') {
       if (!game.drawOfferBy || String(game.drawOfferBy) === String(user.id)) {
-        return NextResponse.json({ error: 'Нет активного предложения ничьей' }, { status: 400 })
+        return NextResponse.json({ error: 'There is no active draw offer' }, { status: 400 })
       }
 
       const updatedGame = await prisma.game.update({
@@ -97,8 +97,8 @@ export async function POST(
       return NextResponse.json({ success: true, game: updatedGame })
     }
 
-    return NextResponse.json({ error: 'Неверное действие' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка обработки предложения ничьей' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not handle the draw offer' }, { status: 500 })
   }
 }

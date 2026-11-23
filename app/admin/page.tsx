@@ -74,15 +74,15 @@ export default function AdminPage() {
                 className="flex items-center gap-2 px-3 sm:px-4 py-2 glass-dark text-white rounded-lg hover:bg-opacity-50 transition-all text-sm sm:text-base"
               >
                 <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">Назад</span>
+                <span className="hidden sm:inline">Back</span>
               </Link>
               <div className="flex items-center gap-2 sm:gap-3">
                 <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400" />
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Админ панель</h1>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">Admin panel</h1>
               </div>
             </div>
           </div>
-          <p className="text-gray-400 text-sm sm:text-base ml-0 sm:ml-20">Управление игроками и статистикой</p>
+          <p className="text-gray-400 text-sm sm:text-base ml-0 sm:ml-20">Players and statistics</p>
         </motion.div>
       </div>
 
@@ -96,7 +96,7 @@ export default function AdminPage() {
             >
               <div className="flex items-center gap-2 sm:gap-3 mb-2">
                 <Users className="w-4 h-4 sm:w-6 sm:h-6 text-blue-400" />
-                <span className="text-gray-400 text-xs sm:text-sm">Всего игроков</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Players</span>
               </div>
               <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">{users.length}</p>
             </motion.div>
@@ -109,7 +109,7 @@ export default function AdminPage() {
             >
               <div className="flex items-center gap-2 sm:gap-3 mb-2">
                 <Trophy className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-400" />
-                <span className="text-gray-400 text-xs sm:text-sm">Всего игр</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Games</span>
               </div>
               <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
                 {users.reduce((sum: number, u: any) => sum + (u.statistics?.totalGames || 0), 0)}
@@ -124,7 +124,7 @@ export default function AdminPage() {
             >
               <div className="flex items-center gap-2 sm:gap-3 mb-2">
                 <TrendingDown className="w-4 h-4 sm:w-6 sm:h-6 text-green-400" />
-                <span className="text-gray-400 text-xs sm:text-sm">Активных</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Active</span>
               </div>
               <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
                 {users.filter((u: any) => isActiveUser(u.lastLoginAt, 7)).length}
@@ -139,7 +139,7 @@ export default function AdminPage() {
             >
               <div className="flex items-center gap-2 sm:gap-3 mb-2">
                 <Calendar className="w-4 h-4 sm:w-6 sm:h-6 text-purple-400" />
-                <span className="text-gray-400 text-xs sm:text-sm">Сегодня</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Today</span>
               </div>
               <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
                 {users.filter((u: any) => isToday(u.lastLoginAt)).length}
@@ -152,7 +152,7 @@ export default function AdminPage() {
             animate={{ opacity: 1, y: 0 }}
             className="glass-dark rounded-2xl p-3 sm:p-6 overflow-x-auto"
           >
-            <h2 className="text-xl sm:text-2xl font-semibold text-white mb-4 sm:mb-6">Список игроков</h2>
+            <h2 className="text-xl sm:text-2xl font-semibold text-white mb-4 sm:mb-6">Players</h2>
             <div className="block md:hidden space-y-3">
               {users.map((u, index) => (
                 <motion.div
@@ -174,19 +174,19 @@ export default function AdminPage() {
                   </div>
                   <div className="grid grid-cols-4 gap-2 text-xs">
                     <div>
-                      <div className="text-gray-400">Игр</div>
+                      <div className="text-gray-400">Games</div>
                       <div className="text-white font-semibold">{u.statistics?.totalGames || 0}</div>
                     </div>
                     <div>
-                      <div className="text-gray-400">Побед</div>
+                      <div className="text-gray-400">Wins</div>
                       <div className="text-green-400 font-semibold">{u.statistics?.wins || 0}</div>
                     </div>
                     <div>
-                      <div className="text-gray-400">Пораж.</div>
+                      <div className="text-gray-400">Losses</div>
                       <div className="text-red-400 font-semibold">{u.statistics?.losses || 0}</div>
                     </div>
                     <div>
-                      <div className="text-gray-400">Ничьих</div>
+                      <div className="text-gray-400">Draws</div>
                       <div className="text-yellow-400 font-semibold">{u.statistics?.draws || 0}</div>
                     </div>
                   </div>
@@ -200,13 +200,13 @@ export default function AdminPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-700">
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-sm">Игрок</th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-sm">Player</th>
                     <th className="text-left py-3 px-4 text-gray-400 font-semibold text-sm">Email</th>
-                    <th className="text-center py-3 px-4 text-gray-400 font-semibold text-sm">Игр</th>
-                    <th className="text-center py-3 px-4 text-gray-400 font-semibold text-sm">Побед</th>
-                    <th className="text-center py-3 px-4 text-gray-400 font-semibold text-sm">Поражений</th>
-                    <th className="text-center py-3 px-4 text-gray-400 font-semibold text-sm">Ничьих</th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-sm">Последний вход</th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-semibold text-sm">Games</th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-semibold text-sm">Wins</th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-semibold text-sm">Losses</th>
+                    <th className="text-center py-3 px-4 text-gray-400 font-semibold text-sm">Draws</th>
+                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-sm">Last sign-in</th>
                   </tr>
                 </thead>
                 <tbody>

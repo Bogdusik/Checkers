@@ -43,14 +43,14 @@ export default function MoveHistory({ moves, currentPlayer }: MoveHistoryProps) 
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
           <History className="w-4 h-4 sm:w-5 sm:h-5" />
-          История ходов
+          Move history
         </h2>
         {moves.length > 0 && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="text-xs text-gray-400 hover:text-white transition-colors"
           >
-            {isExpanded ? 'Свернуть' : 'Развернуть'}
+            {isExpanded ? 'Collapse' : 'Expand'}
           </button>
         )}
       </div>
@@ -59,7 +59,7 @@ export default function MoveHistory({ moves, currentPlayer }: MoveHistoryProps) 
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {moves.length === 0 ? (
             <div className="text-gray-400 text-sm text-center py-4">
-              Ходов пока нет
+              No moves yet
             </div>
           ) : (
             <div className="space-y-1">

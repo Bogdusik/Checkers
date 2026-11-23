@@ -29,14 +29,14 @@ export default function RegisterPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Ошибка регистрации')
+        setError(data.error || 'Sign-up failed')
         return
       }
 
       router.push('/')
       router.refresh()
     } catch (err) {
-      setError('Произошла ошибка')
+      setError('Something went wrong')
     } finally {
       setLoading(false)
     }
@@ -58,8 +58,8 @@ export default function RegisterPage() {
           >
             <UserPlus className="w-10 h-10 sm:w-12 sm:h-12 text-blue-400" />
           </motion.div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Регистрация</h1>
-          <p className="text-gray-400 text-sm sm:text-base">Создайте новый аккаунт</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Sign up</h1>
+          <p className="text-gray-400 text-sm sm:text-base">Create a new account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
@@ -101,7 +101,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Пароль
+              Password
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
@@ -132,15 +132,15 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg glow text-base sm:text-sm"
           >
-            {loading ? 'Регистрация...' : 'Зарегистрироваться'}
+            {loading ? 'Creating account...' : 'Sign up'}
           </button>
         </form>
 
         <div className="mt-4 sm:mt-6 text-center">
           <p className="text-gray-400 text-sm sm:text-base">
-            Уже есть аккаунт?{' '}
+            Already have an account?{' '}
             <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
-              Войти
+              Sign in
             </Link>
           </p>
         </div>

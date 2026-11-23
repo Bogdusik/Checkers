@@ -23,21 +23,21 @@ export class ValidationError extends AppError {
 }
 
 export class AuthenticationError extends AppError {
-  constructor(message: string = 'Не авторизован') {
+  constructor(message: string = 'Not signed in') {
     super(message, 401, 'AUTH_ERROR')
     this.name = 'AuthenticationError'
   }
 }
 
 export class AuthorizationError extends AppError {
-  constructor(message: string = 'Нет доступа') {
+  constructor(message: string = 'Access denied') {
     super(message, 403, 'AUTHORIZATION_ERROR')
     this.name = 'AuthorizationError'
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(message: string = 'Ресурс не найден') {
+  constructor(message: string = 'Not found') {
     super(message, 404, 'NOT_FOUND')
     this.name = 'NotFoundError'
   }
@@ -82,7 +82,7 @@ export function handleError(error: unknown): { message: string; statusCode: numb
   if (error instanceof Error) {
     logError(error)
     return {
-      message: 'Внутренняя ошибка сервера',
+      message: 'Internal server error',
       statusCode: 500,
       code: 'INTERNAL_ERROR'
     }
@@ -90,7 +90,7 @@ export function handleError(error: unknown): { message: string; statusCode: numb
 
   logError(error)
   return {
-    message: 'Неизвестная ошибка',
+    message: 'Unknown error',
     statusCode: 500,
     code: 'UNKNOWN_ERROR'
   }

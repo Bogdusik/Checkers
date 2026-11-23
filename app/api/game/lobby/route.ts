@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -65,6 +65,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result)
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка создания/поиска игры' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not create or find a game' }, { status: 500 })
   }
 }

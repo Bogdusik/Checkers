@@ -9,12 +9,12 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const { inviteId } = await request.json()
     if (!inviteId) {
-      return NextResponse.json({ error: 'Не указано приглашение' }, { status: 400 })
+      return NextResponse.json({ error: 'No invite specified' }, { status: 400 })
     }
 
     const invite = await prisma.gameInvite.findUnique({
@@ -23,23 +23,23 @@ export async function POST(request: NextRequest) {
     })
 
     if (!invite || String(invite.toUserId) !== String(user.id)) {
-      return NextResponse.json({ error: 'Приглашение не найдено' }, { status: 404 })
+      return NextResponse.json({ error: 'Invite not found' }, { status: 404 })
     }
 
     if (invite.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Приглашение уже обработано' }, { status: 400 })
+      return NextResponse.json({ error: 'Invite already handled' }, { status: 400 })
     }
 
     const game = await prisma.$transaction(async (tx) => {
       const currentInvite = await tx.gameInvite.findUnique({ where: { id: inviteId } })
       
       if (!currentInvite || String(currentInvite.toUserId) !== String(user.id) || currentInvite.status !== 'PENDING') {
-        throw new Error('Приглашение недоступно')
+        throw new Error('Invite is no longer available')
       }
 
       if (new Date(currentInvite.expiresAt) < new Date()) {
         await tx.gameInvite.update({ where: { id: inviteId }, data: { status: 'EXPIRED' } })
-        throw new Error('Приглашение истекло')
+        throw new Error('Invite has expired')
       }
 
       const checkersGame = createNewGame()
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (updateResult.count === 0) {
-        throw new Error('Приглашение уже обработано')
+        throw new Error('Invite already handled')
       }
 
       return newGame
@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ game, inviteId })
   } catch (error: any) {
     const errorMessages = [
-      'Приглашение недоступно',
-      'Приглашение уже обработано',
-      'Приглашение истекло'
+      'Invite is no longer available',
+      'Invite already handled',
+      'Invite has expired'
     ]
     
     if (errorMessages.includes(error?.message)) {
@@ -86,9 +86,9 @@ export async function POST(request: NextRequest) {
     }
     
     if (error?.code === 'P1001') {
-      return NextResponse.json({ error: 'Ошибка подключения к БД' }, { status: 503 })
+      return NextResponse.json({ error: 'Database connection error' }, { status: 503 })
     }
     
-    return NextResponse.json({ error: 'Ошибка принятия приглашения' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not accept the invite' }, { status: 500 })
   }
 }

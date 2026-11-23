@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser(request)
     if (!user) {
-      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 })
+      return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -38,6 +38,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ games, total, hasMore: offset + limit < total })
   } catch (error) {
-    return NextResponse.json({ error: 'Ошибка получения истории игр' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not load game history' }, { status: 500 })
   }
 }
